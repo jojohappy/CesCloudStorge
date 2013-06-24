@@ -12,4 +12,4 @@ require 'sinatra'
 require 'sinatra/reloader' if development?
 
 # Set project configuration
-require File.expand_path("../app", __FILE__)
+require File.expand_path("../application", __FILE__)
