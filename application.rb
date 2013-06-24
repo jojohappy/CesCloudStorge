@@ -34,7 +34,8 @@ APP_CONFIG = YAML.load_file(File.expand_path("../config", __FILE__) + '/app_conf
 
 require 'mongo'
 include Mongo
-MongoDB = MongoClient.new("10.0.0.9", 27017, :pool_size => 20, :pool_timeout => 5).db("test")
+#MongoDB = MongoClient.new("10.0.0.9", 27017, :pool_size => 20, :pool_timeout => 5).db("test")
+MongoDB = MongoClient.new("172.17.10.218", 30000, :pool_size => 20, :pool_timeout => 5).db("test")
 
 # initialize redis cache
 # CACHE = ActiveSupport::Cache::DalliStore.new("127.0.0.1")
