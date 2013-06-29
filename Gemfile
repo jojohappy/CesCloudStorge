@@ -1,8 +1,9 @@
-
+source 'https://rubygems.org'
 gem 'rack'
 gem 'sinatra'
 gem 'sinatra-contrib'
 gem 'mongo'
+gem 'em-mongo'
 gem 'em-synchrony', require: ['em-synchrony', 'em-synchrony/activerecord']
 gem 'sinatra-synchrony', require: 'sinatra/synchrony'
 gem 'oj'

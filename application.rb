@@ -1,8 +1,6 @@
-require 'mongo'
+require 'em-mongo'
 require 'sinatra'
 require 'sinatra/synchrony'
-
-include Mongo
 
 configure do
   # = Configuration =
@@ -11,9 +9,6 @@ configure do
   set :raise_errors,    development?
   set :logging,         true
   set :static,          false # your upstream server should deal with those (nginx, Apache)
-  conn = MongoClient.new("172.17.10.218", 27017)
-  set :mongo_connection, conn
-  set :mongo_db, conn.db('test')
 end
 
 configure :production do
@@ -36,10 +31,6 @@ end
 
 # load project config
 APP_CONFIG = YAML.load_file(File.expand_path("../config", __FILE__) + '/app_config.yml')[ENV["RACK_ENV"]]
-
-
-#MongoDB = MongoClient.new("10.0.0.9", 27017, :pool_size => 20, :pool_timeout => 5).db("test")
-#MongoDB = MongoClient.new("172.17.10.218", 27017, :pool_size => 20, :pool_timeout => 5).db("test")
 
 # initialize redis cache
 # CACHE = ActiveSupport::Cache::DalliStore.new("127.0.0.1")
