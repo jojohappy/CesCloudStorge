@@ -1,8 +1,15 @@
 
-post "/folder/delete" do
+delete "/folder/delete" do
   content_type :json
+  if params[:folder_id].nil? then
+    return {'result' => -1, 'error_msg' => 'folder_id is empty'}.to_json
+  end
+  if params[:is_forever].nil? then
+    is_forever = 0
+  else
+    is_forever = params[:is_forever]
+  end
   folder_id = params[:folder_id]
-  is_forever = params[:is_forever]
   
   folders = folder_id.split(",")
   folders.each do |fd| 
@@ -44,8 +51,56 @@ def delete_filesystem(file)
   
 end
 
-get "/folder/move" do
+post "/folder/move" do
+  if params[:folder_id] then
+    return {'result' => -1, 'error_msg' => 'source folder_id is empty'}.to_json
+  end
+  if params[:dest_folder_id] then
+    return {'result' => -1, 'error_msg' => 'destination folder_id is empty'}.to_json
+  end
+  src_folder_id = params[:folder_id]
+  dest_folder_id = params[:dest_folder_id]
   
+  folder = Folder.find(src_folder_id.to_i)
+  parent_src_folder_id = folder.parent_folder_id
+  folder.parent_folder_id = dest_folder_id.to_i
+  folder.save
+  filelist = get_filelist(parent_src_folder_id)
+  {'result' => 0, 'total' => filelist.count(), 'filelist' => filelist}.to_json
 end
 
+post "/folder/rename" do
+  if params[:folder_id] then
+    return {'result' => -1, 'error_msg' => 'source folder_id is empty'}.to_json
+  end
+  
+  if params[:new_folder_name] then
+    return {'result' => -1, 'error_msg' => 'folder\'s name is empty'}.to_json
+  end
+  
+  src_folder_id = params[:folder_id]
+  new_folder_name = params[:new_folder_name]
+  
+  folder = Folder.find(src_folder_id.to_i)
+  parent_src_folder_id = folder.parent_folder_id
+  folder.folder_name = new_folder_name.to_s
+  folder.save
+  filelist = get_filelist(parent_src_folder_id)
+  {'result' => 0, 'total' => filelist.count(), 'filelist' => filelist}.to_json
+end
+
+post "/folder/create" do
+  if params[:parent_folder_id] then
+    return {'result' => -1, 'error_msg' => 'parent folder_id is empty'}.to_json
+  end
+  
+  if params[:new_folder_name] then
+    return {'result' => -1, 'error_msg' => 'folder\'s name is empty'}.to_json
+  end
+  
+  parent_folder_id = params[:parent_folder_id]
+  new_folder_name = params[:new_folder_name]
+  
+  new_folder = Folder.create(name: "David", occupation: "Code Artist")
+end
 

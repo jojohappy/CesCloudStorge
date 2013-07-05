@@ -1,18 +1,16 @@
 
 get "/list/file" do
+  content_type :json
+  if params[:folder_id] then
+    return {'result' => -1, 'error_msg' => 'folder_id is empty'}.to_json
+  end
   current_folder_id = params[:folder_id]
+  
   file_result = []
   if current_folder_id == "-1" then
     current_folder_id = "3"
   end
-  content_type :json
-  folderlist = Folder.where("parent_folder_id=?", current_folder_id.to_s)
-  
-  current_folder = Folder.find(current_folder_id.to_i)
-  filelist = current_folder.files
-
-  file_result = convertRecord2Struct(folderlist, filelist)
-  
+  file_result = get_filelist(current_folder_id)
   {'result' => 0, 'total' => file_result.count(), 'filelist' => file_result}.to_json
 end
 
@@ -40,8 +38,12 @@ get "/list/synchrony" do
 end
 
 get "/list/search" do
-  search_text = params[:search_text]
   content_type :json
+  if params[:search_text].nil? then
+    return {'result' => -1, 'error_msg' => 'search text is empty'}.to_json
+  end
+  search_text = params[:search_text]
+  
   folderlist = Folder.where("folder_name like '%#{search_text}%'")
   filelist = Files.where("file_name like '%#{search_text}%'")
   search_result = convertRecord2Struct(folderlist, filelist)
@@ -59,5 +61,14 @@ def convertRecord2Struct(folderlist, filelist)
     f = FileStruct.new(file.file_id, -1, file.file_name, file.mime_type, file.file_size, file.create_time.strftime('%Y-%m-%d %I:%M:%S'), file.last_modified.strftime('%Y-%m-%d %I:%M:%S'), "", file.user_id, "", "", file.description)
     file_result.push(f)
   end
+  return file_result
+end
+
+def get_filelist(folder_id)
+  file_result = []
+  folderlist = Folder.where("parent_folder_id=?", folder_id.to_s)
+  current_folder = Folder.find(folder_id.to_i)
+  filelist = current_folder.files
+  file_result = convertRecord2Struct(folderlist, filelist)
   return file_result
 end
