@@ -29,6 +29,29 @@ else
   logger = ::Logger.new("/dev/null")
 end
 
+# Sets up database configuration
+ActiveRecord::Base.establish_connection YAML::load(File.open('config/database.yml'))[ENV["RACK_ENV"]]
+# ActiveRecord::Base.logger = logger
+ActiveSupport.on_load(:active_record) do
+  self.include_root_in_json = false
+  self.default_timezone = :local
+  self.time_zone_aware_attributes = false
+  self.logger = logger
+end
+
+# Sets MondoDB
+def db
+  @@db ||=
+  db = EventMachine::Synchrony::ConnectionPool.new(size: 20) do
+    #newdb = EM::Mongo::Connection.new('172.16.0.9', 27017, 1, {:reconnect_in => 1}).db('test')
+    #newdb = EM::Mongo::Connection.new('172.17.10.137', 27017, 1, {:reconnect_in => 1}).db('admin')
+    newdb = EM::Mongo::Connection.new('172.17.10.215', 27017, 1, {:reconnect_in => 1}).db('admin')
+    newdb.authenticate('root', '123456')
+    newdb
+  end
+  return @@db
+end
+
 # load project config
 APP_CONFIG = YAML.load_file(File.expand_path("../config", __FILE__) + '/app_config.yml')[ENV["RACK_ENV"]]
 
