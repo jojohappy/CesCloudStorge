@@ -1,7 +1,7 @@
 
 get "/list/file" do
   content_type :json
-  if params[:folder_id] then
+  if params[:folder_id].nil? then
     return {'result' => -1, 'error_msg' => 'folder_id is empty'}.to_json
   end
   current_folder_id = params[:folder_id]

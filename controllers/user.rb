@@ -1,9 +1,9 @@
 
 post '/user/login' do
-  if params[:username] then
+  if params[:username].nil? then
     return {'result' => -1, 'error_msg' => 'user name is empty'}.to_json
   end
-  if params[:password] then
+  if params[:password].nil? then
     return {'result' => -1, 'error_msg' => 'password is empty'}.to_json
   end
   username = params[:username]
