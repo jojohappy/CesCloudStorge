@@ -6,7 +6,8 @@ development:
   pool: 5
   username: root
   password: '111111'
-  host: '10.0.0.10'
+  #host: '10.0.0.10'
+  host: '172.17.10.236'
   
 production:
   adapter: em_mysql2
@@ -16,4 +17,5 @@ production:
   pool: 200
   username: root
   password: '111111'
-  host: '10.0.0.10'
+  host: '172.17.10.236'
+  #host: '10.0.0.10'
