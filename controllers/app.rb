@@ -37,3 +37,8 @@ end
 before '/share/*' do
   auth()
 end
+
+after '/**/*' do
+  headers['Access-Control-Allow-Origin'] = '*'
+end
+

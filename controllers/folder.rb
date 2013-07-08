@@ -24,7 +24,7 @@ def delete_folder(folder_id, is_forever)
     folder = Folder.find(folder_id.to_i)
     folder.parent_folder_id = 1
     folder.save
-  else if 1 == is_forever then
+  elsif 1 == is_forever then
     folder = Folder.find(folder_id.to_i)
     files = folder.files
     files.each do |tmp|

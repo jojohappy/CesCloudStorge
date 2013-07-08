@@ -57,7 +57,7 @@ def create_filesystem(file)
 
 end
 
-get "/file/copy" do
+post "/file/copy" do
   if params[:file_id].nil? then
     return {'result' => -1, 'error_msg' => "file_id is empty"}.to_json
   end
@@ -111,7 +111,7 @@ get "/file/copy" do
   {'result' => 0, 'total' => filelist.count(), 'filelist' => filelist}.to_json
 end
 
-get "/file/delete" do
+delete "/file/delete" do
   if params[:file_id].nil? then
     return {'result' => -1, 'error_msg' => "file_id is empty"}.to_json
   end
@@ -135,7 +135,7 @@ get "/file/delete" do
       if !file.save then
         return {'result' => -1, 'error_msg' => file.errors}.to_json
       end
-    else if is_forever == 1 then
+    elsif is_forever == 1 then
       file = Files.find(f.to_i)
 	  current_folder = file.folders.first
 	  # 文件系统删除文件
@@ -149,7 +149,7 @@ get "/file/delete" do
   {'result' => 0, 'total' => filelist.count(), 'filelist' => filelist}.to_json
 end
 
-get "/file/rename" do
+post "/file/rename" do
   if params[:file_id].nil? then
     return {'result' => -1, 'error_msg' => "file_id is empty"}.to_json
   end
@@ -174,3 +174,4 @@ get "/file/rename" do
   filelist = get_filelist(current_folder.folder_id)
   {'result' => 0, 'total' => filelist.count(), 'filelist' => filelist}.to_json
 end
+

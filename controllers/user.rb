@@ -1,5 +1,5 @@
 
-post '/user/login' do
+get '/user/login' do
   if params[:username].nil? then
     return {'result' => -1, 'error_msg' => 'user name is empty'}.to_json
   end
@@ -10,6 +10,7 @@ post '/user/login' do
   password = params[:password]
   
   response = RestClient.post 'http://172.17.10.76:8080/cas-server/v1/authenticateUser', {:username => username, :password => password}, {:content_type => :json, :accept => :json}
+  json = JSON.parse(response.body)
   content_type :json
-  response
+  {'username' => username, 'result' => json['result']}.to_json
 end

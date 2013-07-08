@@ -1,20 +1,22 @@
 
-get "/list/file" do
+get "/list/files" do
   content_type :json
   if params[:folder_id].nil? then
-    return {'result' => -1, 'error_msg' => 'folder_id is empty'}.to_json
+    # return {'result' => -1, 'error_msg' => 'folder_id is empty'}.to_json
+    current_folder_id = "-1"
+  else
+    current_folder_id = params[:folder_id]
   end
-  current_folder_id = params[:folder_id]
   
   file_result = []
-  if current_folder_id == "-1" then
+  if current_folder_id.to_i == -1 then
     current_folder_id = "3"
   end
   file_result = get_filelist(current_folder_id)
   {'result' => 0, 'total' => file_result.count(), 'filelist' => file_result}.to_json
 end
 
-get "/list/folder" do  
+get "/list/folders" do  
   content_type :json
   folderlist = []
   folderlist = get_folder_tree(3)
