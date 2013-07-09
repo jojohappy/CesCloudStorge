@@ -8,12 +8,21 @@ get "/list/files" do
     current_folder_id = params[:folder_id]
   end
   
+  if params[:sort].nil? then
+    sort = ""
+  else
+    sort = params[:sort]
+  end
+  
   file_result = []
   if current_folder_id.to_i == -1 then
     current_folder_id = "3"
   end
   file_result = get_filelist(current_folder_id)
-  {'result' => 0, 'total' => file_result.count(), 'filelist' => file_result}.to_json
+  # 递归查询父文件夹
+  current_folder = Folder.find(current_folder_id.to_i)
+  folder_result = get_folderlist(current_folder)
+  {'result' => 0, 'total' => file_result.count(), 'filelist' => file_result, 'folderlist' => folder_result}.to_json
 end
 
 get "/list/folders" do  
@@ -21,6 +30,17 @@ get "/list/folders" do
   folderlist = []
   folderlist = get_folder_tree(3)
   {'result' => 0, 'folderlist' => folderlist}.to_json
+end
+
+def get_folderlist(current_folder)
+  folders = []
+  #current_folder = Folder.find(folder_id.to_i)
+  folders.push(current_folder)
+  if current_folder.parent_folder_id.to_i <= 0 then
+    return folders
+  end
+  fparent = Folder.find(current_folder.parent_folder_id.to_i)
+  return folders.concat(get_folderlist(fparent))
 end
 
 def get_folder_tree(folder_id)
@@ -42,6 +62,7 @@ end
 get "/list/search" do
   content_type :json
   if params[:search_text].nil? then
+    status 400
     return {'result' => -1, 'error_msg' => 'search text is empty'}.to_json
   end
   search_text = params[:search_text]

@@ -10,7 +10,8 @@ pid="log/thin.pid"
 
 case "$1" in
   start)
-    bundle exec thin start -e development -p 8081 -P $pid -d
+    bundle exec thin start -e development -p 8081 --max-conns 102400 -P $pid -d
+    #bundle exec thin start -e production -p 8081 --max-conns 102400 -P $pid -d
     ;;
   stop)
     bundle exec thin stop -P $pid

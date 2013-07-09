@@ -14,7 +14,7 @@ production:
   encoding: utf8
   reconnect: true
   database: cloudstorge
-  pool: 200
+  pool: 10
   username: root
   password: '111111'
   host: '172.17.10.236'

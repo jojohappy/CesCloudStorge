@@ -1,7 +1,8 @@
 
-delete "/folder/delete" do
+post "/folder/delete" do
   content_type :json
   if params[:folder_id].nil? then
+    status 400
     return {'result' => -1, 'error_msg' => 'folder_id is empty'}.to_json
   end
   if params[:is_forever].nil? then
@@ -15,8 +16,6 @@ delete "/folder/delete" do
   folders.each do |fd| 
     delete_folder(fd, is_forever)
   end
-  
-  
 end
 
 def delete_folder(folder_id, is_forever)
@@ -45,15 +44,18 @@ def delete_folder(folder_id, is_forever)
       return
     end
   else
+    status 400
     return {'result' => -1, 'error_msg' => 'is_forever error'}.to_json
   end
 end
 
 post "/folder/move" do
   if params[:folder_id].nil? then
+    status 400
     return {'result' => -1, 'error_msg' => 'source folder_id is empty'}.to_json
   end
   if params[:dest_folder_id].nil? then
+    status 400
     return {'result' => -1, 'error_msg' => 'destination folder_id is empty'}.to_json
   end
   src_folder_ids = params[:folder_id]
@@ -64,6 +66,7 @@ post "/folder/move" do
   folders.each do |fd| 
     folder = Folder.find(fd.to_i)
     if nil == folder then
+	  status 400
       return {'result' => -1, 'error_msg' => "Folder doesn't exists."}.to_json
     end
   
@@ -89,10 +92,12 @@ end
 
 post "/folder/rename" do
   if params[:folder_id].nil? then
+    status 400
     return {'result' => -1, 'error_msg' => 'source folder_id is empty'}.to_json
   end
   
   if params[:new_folder_name].nil? then
+    status 400
     return {'result' => -1, 'error_msg' => 'folder\'s name is empty'}.to_json
   end
   filelist = []
@@ -103,6 +108,7 @@ post "/folder/rename" do
   parent_src_folder_id = folder.parent_folder_id
   folderfind = Folder.where('parent_folder_id' => parent_src_folder_id, 'folder_name' => new_folder_name)
   if nil != folderfind && new_folder_name == folderfind.folder_name then
+    status 400
     return {'result' => -1, 'error_msg' => "Folder \'#{new_folder_name}\' already exists."}.to_json
   end
   folder.folder_name = new_folder_name.to_s
@@ -113,10 +119,12 @@ end
 
 post "/folder/create" do
   if params[:parent_folder_id].nil? then
+    status 400
     return {'result' => -1, 'error_msg' => 'parent folder_id is empty'}.to_json
   end
   
   if params[:new_folder_name].nil? then
+    status 400
     return {'result' => -1, 'error_msg' => 'folder\'s name is empty'}.to_json
   end
   filelist = []
@@ -131,7 +139,8 @@ post "/folder/create" do
     newfolder.folder_name = new_folder_name
     if newfolder.valid? then
       newfolder.save
-    else      
+    else
+	  status 400
       return {'result' => -1, 'error_msg' => newfolder.errors}.to_json
     end
   

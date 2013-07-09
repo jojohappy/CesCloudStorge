@@ -1,9 +1,11 @@
 post "/file/move" do
   if params[:file_id].nil? then
+    status 400
     return {'result' => -1, 'error_msg' => 'file_id is empty'}.to_json
   end
   
   if params[:dest_folder_id].nil? then
+    status 400
     return {'result' => -1, 'error_msg' => 'dest_folder_id is empty'}.to_json
   end
   
@@ -15,6 +17,7 @@ post "/file/move" do
   files.each do |f|
     src_file = Files.find(f.to_i)
     if nil == src_file then
+	  status 400
       return {'result' => -1, 'error_msg' => "File doesn't exists"}.to_json
     end
   
@@ -22,6 +25,7 @@ post "/file/move" do
     file_name = src_file.file_name
     dest_folder = Folder.find(dest_folder_id.to_i)
     if nil == dest_folder then
+	  status 400
       return {'result' => -1, 'error_msg' => "Folder doesn't exists"}.to_json
     end
     dest_file = dest_folder.files
@@ -42,6 +46,7 @@ post "/file/move" do
     src_file.file_name = file_name
     src_file.folders = dest_folder_list
     if !src_file.save then
+	  status 400
       return {'result' => -1, 'error_msg' => src_file.errors}.to_json
     end
   end
@@ -59,10 +64,12 @@ end
 
 post "/file/copy" do
   if params[:file_id].nil? then
+    status 400
     return {'result' => -1, 'error_msg' => "file_id is empty"}.to_json
   end
   
   if params[:dest_folder_id].nil? then
+    status 400
     return {'result' => -1, 'error_msg' => "destination folder is empty"}.to_json
   end
   
@@ -70,6 +77,7 @@ post "/file/copy" do
   dest_folder_id = params[:dest_folder_id]
   
   files = file_ids.split(",")
+  current_folder = nil
   files.each do |file|
     dest_folder = Folder.find(dest_folder_id.to_i)
 	copy_file = Files.find(file.to_i)
@@ -84,7 +92,7 @@ post "/file/copy" do
 		  flag = 1
 		end
 	  end
-    end while flag == 0
+    end while flag == 1
 	new_file = Files.new
 	#:mime_type, :user_id, :create_time, :last_modified, :path, :description :revisions, :file_size file_name
 	new_file.mime_type = copy_file.mime_type
@@ -94,13 +102,14 @@ post "/file/copy" do
     new_file.path = ""
 	new_file.description = copy_file.description
 	new_file.revisions = 1
-	new_file.file_size = copy_file.size
+	new_file.file_size = copy_file.file_size
 	
 	new_file.file_name = copy_file_name
 	dest_folder_list = []
 	dest_folder_list.push(dest_folder)
 	new_file.folders = dest_folder_list
 	if !new_file.save then
+	  status 400
 	  return {'result' => -1, 'error_msg' => new_file.errors}.to_json
 	end
     file_path = create_filesystem(new_file)
@@ -111,8 +120,9 @@ post "/file/copy" do
   {'result' => 0, 'total' => filelist.count(), 'filelist' => filelist}.to_json
 end
 
-delete "/file/delete" do
+post "/file/delete" do
   if params[:file_id].nil? then
+    status 400
     return {'result' => -1, 'error_msg' => "file_id is empty"}.to_json
   end
   
@@ -121,12 +131,14 @@ delete "/file/delete" do
   else
     is_forever = 1
   end
-  
+  current_folder = nil
   file_ids = params[:file_id]
   files = file_ids.split(",")
   files.each do |f|
     if is_forever == 0 then
       file = Files.find(f.to_i)
+	  # 获得用户回收站folder_id
+	  
       dest_folder = Folder.find(1)
       dest_folder_list = []
       dest_folder_list.push(dest_folder)
@@ -142,6 +154,7 @@ delete "/file/delete" do
 	  delete_filesystem(file)
 	  file.destroy()
     else
+	  status 400
       return {'result' => -1, 'error_msg' => 'is_forever error'}.to_json
     end
   end
@@ -151,10 +164,12 @@ end
 
 post "/file/rename" do
   if params[:file_id].nil? then
+    status 400
     return {'result' => -1, 'error_msg' => "file_id is empty"}.to_json
   end
   
   if params[:new_file_name].nil? then
+    status 400
     return {'result' => -1, 'error_msg' => "file_name is empty"}.to_json
   end
   
@@ -165,13 +180,37 @@ post "/file/rename" do
   folder = Folder.find(current_folder.folder_id)
   folder.files.each do |f|
     if f.file_name == new_file_name && f.file_id != file_id.to_i then
+	  status 400
 	  return {'result' => -1, 'error_msg' => "File already exists"}.to_json
 	end
   end
   
   file.file_name = new_file_name
+  #获得文件名后缀
+  new_mime_type = get_extname(new_file_name)
+  file.mime_type = new_mime_type
+  #文件系统修改名称
+  
   file.save
   filelist = get_filelist(current_folder.folder_id)
   {'result' => 0, 'total' => filelist.count(), 'filelist' => filelist}.to_json
+end
+
+def get_extname(file_name)
+  fname_array = file_name.split(".")
+  
+  if fname_array.count() >= 2 then
+    if nil == fname_array[0] || "" == fname_array[0] then
+      return "default"
+    else
+      if nil == fname_array[-1] || "" == fname_array[-1] then
+        return "default"
+      else
+        return fname_array[-1]
+      end
+    end
+  else
+    return "default"
+  end
 end
 
