@@ -1,0 +1,136 @@
+﻿<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8" />
+		<link rel="stylesheet" type="text/css" href="css/bootstrap.min.css" />
+		<title>云存储</title>
+	</head>
+	<body>
+		<div class="navbar navbar-inverse navbar-fixed-top">
+			<div class="navbar-inner">
+				<div class="div-container">
+					<a class="brand" href="index.html">
+						<img class="img-header-log" src="./img/boc_logo.png" alt="" title="" /><span style="span-logo">{ 云存储 }</span>
+					</a>
+					<div class="navbar-user-info">
+						<div class="navbar-user-name" id="navbarUserName"></div>
+						<div class="logout" id="divLogoutBtn">
+							<a id="aLogoutBtn" href="#logoutModal" role="button" class="btn btn-danger btn-logout" type="button" data-toggle="modal">
+								登出
+							</a>
+						</div>
+					</div>
+					<div class="navbar-used-space">
+						<div class="progress progress-striped active navbar-used-space-progress">
+							<div class="bar" style="width: 40%;"></div>
+						</div>
+						<div class="navbar-used-space-text">
+							已使用  2.18G / 5G (40%)
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+		<div class="container div-file" id="container">
+			<div class="jumbotron">
+				<div class="div-jumbotron-path" id="divJumbotronPath">
+					<ul class="breadcrumb ul-jumbotron-path" id="ulJumbotronPath">
+						<li class="li-my-disk" id="liMyDiskFolderPath">
+							<a id="aMyDiskFolderPath" class="a-link">我的云存储</a>
+							<span class="divider">/</span>
+						</li>
+						<li class="li-jumbotron-path active hiddenLiPath" id="liHiddenFolderPath">
+							. . . <span class="divider">/</span>
+						</li>
+						<li class="li-jumbotron-path hiddenLiPath" id="liLastFolderPath">
+							<a id="aLastFolderPath" class="a-link"></a>
+							<span class="divider">/</span>
+						</li>
+						<li class="li-jumbotron-path active hiddenLiPath" id="liCurrenFolderPath">
+						</li>
+					</ul>
+				</div>
+				<div class="btn-toolbar div-jumbotron-toolbar">
+					<div class="btn-group">
+						<button class="btn btn-info">上传</button>
+					</div>
+					<div class="btn-group">
+						<button class="btn">创建文件夹</button>
+						<button class="btn dropdown-toggle" data-toggle="dropdown">更多操作 <span class="caret"></span></button>
+						<ul class="dropdown-menu">
+					  <li><a href="#">Action</a></li>
+					  <li><a href="#">Another action</a></li>
+					  <li><a href="#">Something else here</a></li>
+					  <li class="divider"></li>
+					  <li><a href="#">Separated link</a></li>
+					</ul>
+					</div>
+				</div>
+			</div>
+			
+			<div class="div-file-title" id="divFileTitle">
+				<div class="div-title-file-checkbox" id="">
+					<input type="checkbox" name="" />
+				</div>
+				<div class="div-title-file-icon" id="">
+				</div>
+				<div class="div-title-file-name-action title-file" id="divTitleFileName">
+					文件名
+				</div>
+				<div class="div-title-file-size title-file" id="divTitleFileSize">大小</div>
+				<div class="div-title-file-time title-file" id="divTitleFileTime">时间</div>
+			</div>
+		
+			<ul class="ul-file" id="ulFile">
+			</ul>
+		</div>
+		
+		<div id="copyModal" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="copyLabel" aria-hidden="true" style="display: none;">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+				<h3 id="copyLabel">复制文件</h3>
+           </div>
+           <div class="modal-body modal-body-border">
+				<h5>选择复制位置</h5>
+				<div class="folder-tree-for-copy-file" id="folderTreeForCopyFile"></div>
+           </div>
+           <div class="modal-footer">
+				<button class="btn" data-dismiss="modal" id="copyFileCancle">取消</button>
+				<button class="btn btn-info" id="copyFileConfirm">确定</button>
+           </div>
+		</div>
+		
+		<div id="notice" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="noticeLabel" aria-hidden="true" style="display: none;">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+				<h3 id="noticeLabel">通知</h3>
+           </div>
+           <div class="modal-body">
+				<h4 id="noticeText"></h4>
+           </div>
+           <div class="modal-footer">
+				<button class="btn btn-success" data-dismiss="modal">确定</button>
+           </div>
+		</div>
+		
+		<div id="logoutModal" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="logoutLabel" aria-hidden="true" style="display: none;">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+				<h3 id="logoutLabel">注销登录</h3>
+           </div>
+           <div class="modal-body">
+				<h4>确定要登出吗？</h4>
+           </div>
+           <div class="modal-footer">
+				<button class="btn" data-dismiss="modal">取消</button>
+				<button class="btn btn-danger">登出</button>
+           </div>
+		</div>
+		<div class="container div-file-cover hidden" id="divFileCover"></div>
+		<div class="" id="temp"></div>
+		<script type="text/javascript" src="js/jquery.min.js"></script>
+		<script type="text/javascript" src="js/bootstrap.min.js"></script>
+		<link rel="stylesheet" type="text/css" href="css/index.css" />
+		<script type="text/javascript" src="js/index.js"></script>
+	</body>
+</html>
