@@ -24,7 +24,8 @@ when "production"
   logger = ::Logger.new("log/production.log")
   logger.level = ::Logger::WARN
 when "development"
-  logger = ::Logger.new(STDOUT)
+  #logger = ::Logger.new(STDOUT)
+  logger = ::Logger.new("log/development.log")
   logger.level = ::Logger::DEBUG
 else
   logger = ::Logger.new("/dev/null")
@@ -53,11 +54,19 @@ def db
   return @@db
 end
 
+#root file store path
+def _ROOT_FILE_STORE
+  return "/home/cesteam/cloudstorge/"
+end 
+
 # load project config
 APP_CONFIG = YAML.load_file(File.expand_path("../config", __FILE__) + '/app_config.yml')[ENV["RACK_ENV"]]
 
 # initialize redis cache
 # CACHE = ActiveSupport::Cache::DalliStore.new("127.0.0.1")
+use Rack::Session::Pool, :expire_after => 2592000
+use Rack::Sendfile
+
 
 # Set autoload directory
 %w{models controllers lib}.each do |dir|

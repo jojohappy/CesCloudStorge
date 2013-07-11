@@ -1,5 +1,5 @@
 class Token < ActiveRecord::Base
-  attr_accessible :id, :access_token, :refresh_token, :token_type, :expire_in, :authorization_id, :create_time, :last_modified
+  attr_accessible :id, :access_token, :refresh_token, :token_type, :expire_in, :authorization_id, :create_time, :last_modified, :username
   
   def to_json
     {

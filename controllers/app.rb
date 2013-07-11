@@ -13,52 +13,46 @@ get '/test' do
     #doc
   #end
   #listarray.to_json
-  name = params[:fname]
-  
-  aname = name.split(".")
-  
-  if aname.count() >= 2 then
-    if nil == aname[0] || "" == aname[0] then
-	  p "extname = none"
-	else
-	  if nil == aname[-1] || "" == aname[-1] then
-	    p "extname = none1"
-	  else
-	    p "extname = #{aname[-1]}"
-	  end
-	end
-  else
-    p "extname = none3"
-  end
-  
+  #encoding: utf-8
+  name = params[:name]
+  p Digest::MD5.hexdigest(name.encode('utf-8'))
 end
 
 def auth
   if params[:access_token].nil? then
     if env['Authorization'].nil? then
-	  return false
-	else
-	  token = env['Authorization']
-	end
+      return "Missing required parameter: access_token"
+    else
+      token = env['Authorization']
+    end
   else
     token = params[:access_token]
   end
   
   # 检查是否存在token
-  accessToken = Token.where('access_token=?', token.to_s)
+  accessToken = Token.where('access_token=?', token.to_s).first
   if nil == accessToken then
-    return false
+    return "Token doesn't exists"
   else
     # 检查是否超时
     if isExpire(accessToken) then
-	  # accessToken.destory()
-	  return false
-	end
+      # accessToken.destory()
+      return "Token has been expired"
+    end
+    # 检查session中的username是否和token的相同
+    username = session[:username]
+    if nil == username || "" == username then
+      return "no session"
+    end
+    
+    if username != accessToken.username then
+      return "not current user"
+    end
   end
   accessToken.create_time = Time.new
   accessToken.last_modified = Time.new
   accessToken.save
-  return true
+  return "success"
 end
 
 def isExpire(accessToken)
@@ -66,7 +60,10 @@ def isExpire(accessToken)
 end
 
 before '/list/*' do
-  # auth()
+  # content_type: json
+  # if "success" != (msg = auth()) then
+    #{'result' => -1, 'error_msg' => msg}.to_json
+  # end
 end
 
 before '/file/*' do
@@ -89,3 +86,7 @@ after '/**/*' do
   headers['Access-Control-Allow-Origin'] = '*'
 end
 
+not_found do
+  status 200
+  content_type :png
+end

@@ -67,9 +67,11 @@ get "/oauth2/auth" do
     return {'restult' => -1, 'error_msg' => authorization.errors}.to_json
   end
   
-  # 从paas平台获得用户信息
-  
-  return {'code' => code, 'username' => username, 'user_id' => 1}.to_json
+  root_folder_id = 3
+  #root_folder = Folder.where("parent_folder_id=-1 and username=?", username).first
+  #root_folder_id = root_folder.folder_id
+  session[:username] = username
+  return {'code' => code, 'username' => username, 'root_folder_id' => root_folder_id}.to_json
 end
 
 post "/oauth2/token" do
@@ -129,6 +131,8 @@ post "/oauth2/token" do
   end
   auth.status = 0
   auth.save
+  
+  username = session[:username]
   token = Token.new
   token.access_token = Digest::MD5.hexdigest(SecureRandom.base64.encode('utf-8'))
   token.refresh_token = Digest::MD5.hexdigest(SecureRandom.uuid.encode('utf-8'))
@@ -137,6 +141,7 @@ post "/oauth2/token" do
   token.authorization_id = auth.authorization_id
   token.create_time = Time.new
   token.last_modified = Time.new
+  token.username = username
   if !token.save then
     status 400
     return {'restult' => -1, 'error_msg' => token.errors}.to_json

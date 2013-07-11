@@ -9,8 +9,8 @@
 		<div class="navbar navbar-inverse navbar-fixed-top">
 			<div class="navbar-inner">
 				<div class="div-container">
-					<a class="brand" href="index.html">
-						<img class="img-header-log" src="./img/boc_logo.png" alt="" title="" /><span style="span-logo">{ 云存储 }</span>
+					<a class="brand a-brand" href="index.html">
+						<img class="img-header-log" src="./img/boc_logo.png" alt="" title="" /><span style="span-logo" id="spanLogo">{ 云存储 }</span>
 					</a>
 					<div class="navbar-user-info">
 						<div class="navbar-user-name" id="navbarUserName"></div>
@@ -22,10 +22,10 @@
 					</div>
 					<div class="navbar-used-space">
 						<div class="progress progress-striped active navbar-used-space-progress">
-							<div class="bar" style="width: 40%;"></div>
+							<div id="navbarUsedSpaceProgress" class="bar"></div>
 						</div>
-						<div class="navbar-used-space-text">
-							已使用  2.18G / 5G (40%)
+						<div id="navbarUsedSpaceText" class="navbar-used-space-text">
+
 						</div>
 					</div>
 				</div>
@@ -52,18 +52,19 @@
 				</div>
 				<div class="btn-toolbar div-jumbotron-toolbar">
 					<div class="btn-group">
-						<button class="btn btn-info">上传</button>
+						<button class="btn btn-warning back-btn" id="backBtn" title="返回"><</button>
 					</div>
 					<div class="btn-group">
-						<button class="btn">创建文件夹</button>
-						<button class="btn dropdown-toggle" data-toggle="dropdown">更多操作 <span class="caret"></span></button>
-						<ul class="dropdown-menu">
-					  <li><a href="#">Action</a></li>
-					  <li><a href="#">Another action</a></li>
-					  <li><a href="#">Something else here</a></li>
-					  <li class="divider"></li>
-					  <li><a href="#">Separated link</a></li>
-					</ul>
+						<a href="#uploadModal" role="button" class="btn btn-info" type="button" data-toggle="modal">上传</a>
+					</div>
+					<div class="btn-group">
+						<button id="btnCreateFolder" class="btn">创建文件夹</button>
+						<button class="btn dropdown-toggle" id="btnBatchDropdown" data-toggle="dropdown">批量操作 <span class="caret"></span></button>
+						<ul class="dropdown-menu batch-menu" id="batchMenu">
+							<li class="disabled" id="liBatchMove"><a href="#batchMoveModal" id="batchMove" data-toggle="modal">移动</a></li>
+							<li class="disabled" id="liBatchCopy"><a href="#copyModal" id="batchCopy" data-toggle="modal">复制</a></li>
+							<li class="disabled" id="liBatchDelete"><a href="#batchDeleteModal" id="batchDelete" data-toggle="modal">删除</a></li>
+						</ul>
 					</div>
 				</div>
 			</div>
@@ -75,28 +76,98 @@
 				<div class="div-title-file-icon" id="">
 				</div>
 				<div class="div-title-file-name-action title-file" id="divTitleFileName">
-					文件名
+					文件/文件夹名<span class="sort-arrow-down sort-arrow-up" id="sortFileNameArrow"></span>
 				</div>
-				<div class="div-title-file-size title-file" id="divTitleFileSize">大小</div>
-				<div class="div-title-file-time title-file" id="divTitleFileTime">时间</div>
+				<div class="div-title-file-size title-file" id="divTitleFileSize">
+					大小<span class="sort-arrow-down" id="sortFileSizeArrow"></span>
+				</div>
+				<div class="div-title-file-time title-file" id="divTitleFileTime">
+					时间<span class="sort-arrow-down" id="sortFileTimeArrow"></span>
+				</div>
 			</div>
 		
 			<ul class="ul-file" id="ulFile">
 			</ul>
+			
+			<div class="div-file-bottom" id="divFileBottom">
+				©Copyright 2013. All Rights Reserved.
+			</div>
 		</div>
 		
 		<div id="copyModal" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="copyLabel" aria-hidden="true" style="display: none;">
 			<div class="modal-header">
 				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
-				<h3 id="copyLabel">复制文件</h3>
+				<h3 id="copyLabel">复制</h3>
            </div>
            <div class="modal-body modal-body-border">
 				<h5>选择复制位置</h5>
 				<div class="folder-tree-for-copy-file" id="folderTreeForCopyFile"></div>
            </div>
-           <div class="modal-footer">
+           <div class="modal-footer hidden" id="singleCopyBtn">
 				<button class="btn" data-dismiss="modal" id="copyFileCancle">取消</button>
 				<button class="btn btn-info" id="copyFileConfirm">确定</button>
+           </div>
+		   <div class="modal-footer hidden" id="batchCopyBtn">
+				<button class="btn" data-dismiss="modal" id="batchCopyFileCancle">取消</button>
+				<button class="btn btn-info" id="batchCopyFileConfirm">确定</button>
+           </div>
+		</div>
+		
+		<div id="moveModal" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="moveLabel" aria-hidden="true" style="display: none;">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+				<h3 id="moveLabel">移动</h3>
+           </div>
+           <div class="modal-body modal-body-border">
+				<h5 id="moveH5">选择移动位置</h5>
+				<div class="folder-tree-for-copy-file" id="folderTreeForMoveFile"></div>
+           </div>
+           <div class="modal-footer">
+				<button class="btn" data-dismiss="modal" id="moveCancle">取消</button>
+				<button class="btn btn-info" id="moveConfirm">确定</button>
+           </div>
+		</div>
+		
+		<div id="deleteModal" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="deleteLabel" aria-hidden="true" style="display: none;">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+				<h3 id="deleteLabel">删除确认</h3>
+           </div>
+           <div class="modal-body modal-body-border">
+				<h4>确定要删除吗？</h4>
+           </div>
+           <div class="modal-footer">
+				<button class="btn" data-dismiss="modal" id="deleteCancle">取消</button>
+				<button class="btn btn-danger" id="deleteConfirm">确定</button>
+           </div>
+		</div>
+		
+		<div id="batchDeleteModal" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="batchDeleteLabel" aria-hidden="true" style="display: none;">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+				<h3 id="batchDeleteLabel">删除确认</h3>
+           </div>
+           <div class="modal-body modal-body-border">
+				<h4>确定要删除选中的多个文件或文件夹吗？</h4>
+           </div>
+           <div class="modal-footer">
+				<button class="btn" data-dismiss="modal" id="batchDeleteCancle">取消</button>
+				<button class="btn btn-danger" id="batchDeleteConfirm">确定</button>
+           </div>
+		</div>
+		
+		<div id="batchMoveModal" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="batchMoveLabel" aria-hidden="true" style="display: none;">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+				<h3 id="batchMoveLabel">移动</h3>
+           </div>
+           <div class="modal-body modal-body-border">
+				<h5>选择移动位置</h5>
+				<div class="folder-tree-for-copy-file" id="folderTreeForBatchMoveFile"></div>
+           </div>
+           <div class="modal-footer">
+				<button class="btn" data-dismiss="modal" id="batchMoveCancle">取消</button>
+				<button class="btn btn-info" id="batchMoveConfirm">确定</button>
            </div>
 		</div>
 		
@@ -106,10 +177,12 @@
 				<h3 id="noticeLabel">通知</h3>
            </div>
            <div class="modal-body">
-				<h4 id="noticeText"></h4>
+				<span id="noticeLargeSuccess" class="large-success hidden">✔</span>
+				<span id="noticeLargeError" class="large-error hidden">✖</span>
+				<h4 id="noticeText" class="notice-text"></h4>
            </div>
            <div class="modal-footer">
-				<button class="btn btn-success" data-dismiss="modal">确定</button>
+				<button id="noticeButton" class="btn" data-dismiss="modal">确定</button>
            </div>
 		</div>
 		
@@ -126,11 +199,37 @@
 				<button class="btn btn-danger">登出</button>
            </div>
 		</div>
-		<div class="container div-file-cover hidden" id="divFileCover"></div>
-		<div class="" id="temp"></div>
+		
+		<div class="loading hidden" id="loading">
+			<img src="./img/login-loading.gif"/>
+			<span>
+				数据操作中
+			</span>
+		</div>
+		
+		<div id="uploadModal" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="uploadLabel" aria-hidden="true" style="display: none;">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+				<h3 id="uploadLabel">上传</h3>
+           </div>
+           <div class="modal-body">
+				<div class="div-upload" id="divUpload">
+					<img src="./img/loading.gif" id="uploadLoading" class="upload-loading hidden">
+					<input type="file" id="attachment" name="attachment" style="float:left;" />
+					
+				</div>
+           </div>
+           <div class="modal-footer">
+				<button class="btn btn-info" id="uploadBtn">上传</button>
+				<button class="btn" data-dismiss="modal" id="uploadCancle">取消</button>
+           </div>
+		</div>
+		
 		<script type="text/javascript" src="js/jquery.min.js"></script>
 		<script type="text/javascript" src="js/bootstrap.min.js"></script>
 		<link rel="stylesheet" type="text/css" href="css/index.css" />
+		<script type="text/javascript" src="js/resize.js"></script>
+		<script type="text/javascript" src="js/ajaxfileupload.js"></script>
 		<script type="text/javascript" src="js/index.js"></script>
 	</body>
 </html>
