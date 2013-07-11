@@ -108,7 +108,7 @@ post "/list/delete" do
   else
     is_forever = params[:is_forever]
   end
-  
+
   folder_id = params[:folder_id]
   if nil != folder_id && "" != folder_id then
     delete_folder(folder_id, is_forever)
@@ -119,6 +119,7 @@ post "/list/delete" do
   if nil != file_ids && "" != file_ids then
     delete_file(file_ids, is_forever)
   end
+  status 200
   {'result' => 0}.to_json
 end
 
@@ -149,12 +150,12 @@ end
 def convertRecord2Struct(folderlist, filelist)
   file_result = []
   folderlist.each do |folder|
-    fd = FileStruct.new(-1, folder.folder_id, folder.folder_name, "", -1, folder.create_time.strftime('%Y-%m-%d %H:%M:%S'), folder.last_modified.strftime('%Y-%m-%d %H:%M:%S'), "", folder.username, "", "", folder.description, folder.origin_folder)
+    fd = FileStruct.new(-1, folder.folder_id, folder.folder_name, "", -1, folder.create_time.strftime('%Y-%m-%d %H:%M:%S'), folder.last_modified.strftime('%Y-%m-%d %H:%M:%S'), "", folder.username, "", "", folder.description, folder.origin_folder, folder.parent_folder_id)
     file_result.push(fd)
   end
   
   filelist.each do |file|
-    f = FileStruct.new(file.file_id, -1, file.file_name, file.mime_type, file.file_size, file.create_time.strftime('%Y-%m-%d %I:%M:%S'), file.last_modified.strftime('%Y-%m-%d %H:%M:%S'), "", file.username, "", "", file.description, file.origin_folder)
+    f = FileStruct.new(file.file_id, -1, file.file_name, file.mime_type, file.file_size, file.create_time.strftime('%Y-%m-%d %I:%M:%S'), file.last_modified.strftime('%Y-%m-%d %H:%M:%S'), "", file.username, "", "", file.description, file.origin_folder, -9999)
     file_result.push(f)
   end
   return file_result

@@ -12,6 +12,7 @@
 					<a class="brand a-brand" href="index.html">
 						<img class="img-header-log" src="./img/boc_logo.png" alt="" title="" /><span style="span-logo" id="spanLogo">{ 云存储 }</span>
 					</a>
+					<div class="div-notice-info" id="divNoticeInfo"></div>
 					<div class="navbar-user-info">
 						<div class="navbar-user-name" id="navbarUserName"></div>
 						<div class="logout" id="divLogoutBtn">
@@ -71,7 +72,7 @@
 			
 			<div class="div-file-title" id="divFileTitle">
 				<div class="div-title-file-checkbox" id="">
-					<input type="checkbox" name="" />
+					<input type="checkbox" name="" id="checkboxSelectAll"/>
 				</div>
 				<div class="div-title-file-icon" id="">
 				</div>
@@ -215,8 +216,9 @@
            <div class="modal-body">
 				<div class="div-upload" id="divUpload">
 					<img src="./img/loading.gif" id="uploadLoading" class="upload-loading hidden">
-					<input type="file" id="attachment" name="attachment" style="float:left;" />
-					
+					<input type="file" id="attachment" name="attachment" style="float:left;" class=""/>
+					<button class="btn upload-select-btn" id="uploadSelectBtn">选择文件</button>
+					<p class="lead select-file-info" id="selectFileInfo"></p>
 				</div>
            </div>
            <div class="modal-footer">

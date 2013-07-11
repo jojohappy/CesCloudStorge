@@ -1,3 +1,4 @@
+# encoding: utf-8
 
 post "/folder/delete" do
   content_type :json
@@ -48,10 +49,18 @@ post "/folder/rename" do
     status 400
     return {'result' => -1, 'error_msg' => 'folder\'s name is empty'}.to_json
   end
+  
+  
+  
   Folder.transaction do
     filelist = []
     src_folder_id = params[:folder_id]
-    new_folder_name = params[:new_folder_name]
+    new_folder_name = params[:new_folder_name].strip
+  
+    if new_folder_name == "回收站" then 
+      status 400
+      return {'result' => -1, 'error_msg' => "不能重命名为回收站"}.to_json
+    end
   
     folder = Folder.find(src_folder_id.to_i)
     parent_src_folder_id = folder.parent_folder_id
@@ -107,6 +116,17 @@ post "/folder/create" do
 end
 
 def delete_folder(folder_id, is_forever)
+  parent_folder = nil
+  folders = folder_id.split(",")
+  folders.each do |fd| 
+    parent_folder = Folder.find(fd.to_i)
+    delete_folder_singal(fd, is_forever)
+  end
+  #filelist = get_filelist(parent_folder.folder_id, "", 0)
+  {'result' => 0}.to_json
+end
+
+def delete_folder_singal(folder_id, is_forever)
   if 0 == is_forever.to_i then
     folder = Folder.find(folder_id.to_i)
     trash_folder_id = get_user_trash_folder
@@ -118,7 +138,7 @@ def delete_folder(folder_id, is_forever)
     folder.origin_folder = origin_folder
     folder.parent_folder_id = trash_folder_id
     folder.save
-  elsif 1 == is_forever then
+  elsif 1 == is_forever.to_i then
     folder = Folder.find(folder_id.to_i)
     files = folder.files
     files.each do |tmp|
@@ -133,7 +153,7 @@ def delete_folder(folder_id, is_forever)
       return
     else
       fchildren.each do |child|
-        delete_folder(child.folder_id, is_forever)
+        delete_folder_singal(child.folder_id, is_forever)
       end
       folder.destroy()
       return

@@ -1,3 +1,5 @@
+# encoding: utf-8
+
 post "/file/move" do
   content_type :json
   if params[:file_id].nil? then
@@ -71,7 +73,11 @@ post "/file/rename" do
   end
   
   file_id = params[:file_id]
-  new_file_name = params[:new_file_name]
+  new_file_name = params[:new_file_name].strip
+  if new_file_name == "回收站" then 
+    status 400
+    return {'result' => -1, 'error_msg' => "不能重命名为回收站"}.to_json
+  end
   Files.transaction do
     begin
         file = Files.find(file_id.to_i)
@@ -109,8 +115,8 @@ post "/file/rename" do
       return {'result' => -1, 'error_msg' => file.errors}.to_json
     end
   end
-  filelist = get_filelist(current_folder.folder_id, "", 0)
-  {'result' => 0, 'total' => filelist.count(), 'filelist' => filelist}.to_json
+  #filelist = get_filelist(current_folder.folder_id, "", 0)
+  {'result' => 0}.to_json
 end
 
 
@@ -156,7 +162,6 @@ post "/file/upload" do
   
   upload_file_name = String.new(params['attachment'][:filename])
   upload_file_name1 = String.new(params['attachment'][:filename])
-  
   flag = 0
   current_folder.files.each do |file|
     if file.file_name == upload_file_name then
@@ -167,7 +172,8 @@ post "/file/upload" do
   
   if 1== flag then
     status 400
-    return "failure"
+	p "File already exists"
+    return "File already exists"
   end
   
   # 获得扩展名
@@ -209,7 +215,11 @@ post "/file/upload" do
   if !Dir.exists?(real_file_path) then
     Dir.mkdir(real_file_path, 0755)
   end
-  real_file_path = real_file_path + '/' + new_file.path + "." + new_file.mime_type
+  if nil == new_file.mime_type || "" == new_file.mime_type || "default" == new_file.mime_type then
+    real_file_path = real_file_path + '/' + new_file.path
+  else
+    real_file_path = real_file_path + '/' + new_file.path + "." + new_file.mime_type
+  end
   File.open(real_file_path, "w") do |f|
     f.write(params['attachment'][:tempfile].read)
   end
@@ -453,11 +463,12 @@ def delete_file(file_ids, is_forever)
       return {'result' => -1, 'error_msg' => 'trash folder does not exists'}.to_json
     end
     #trash_folder_id = 1
-    if file.folders.first.folder_id == trash_folder_id then
-      status 400
-      return {'result' => -1, 'error_msg' => "File not exists"}.to_json
-    end
-    if is_forever == 0 then
+    
+    if is_forever.to_i == 0 then
+	  if file.folders.first.folder_id == trash_folder_id then
+        status 400
+        return {'result' => -1, 'error_msg' => "File not exists"}.to_json
+      end
       dest_folder = Folder.find(trash_folder_id)
       dest_folder_list = []
       dest_folder_list.push(dest_folder)
@@ -468,9 +479,9 @@ def delete_file(file_ids, is_forever)
         status 500
         return {'result' => -1, 'error_msg' => file.errors}.to_json
       end
-    elsif is_forever == 1 then
+    elsif is_forever.to_i == 1 then
       #file = Files.find(f.to_i)
-      current_folder = file.folders.first
+      #current_folder = file.folders.first
       # 文件系统删除文件
       delete_filesystem(file)
       file.destroy()
@@ -479,6 +490,6 @@ def delete_file(file_ids, is_forever)
       return {'result' => -1, 'error_msg' => 'is_forever error'}.to_json
     end
   end
-  filelist = get_filelist(current_folder.folder_id, "", 0)
-  {'result' => 0, 'total' => filelist.count(), 'filelist' => filelist}.to_json
+  #filelist = get_filelist(current_folder.folder_id, "", 0)
+  {'result' => 0}.to_json
 end
