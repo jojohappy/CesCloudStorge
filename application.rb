@@ -24,8 +24,8 @@ when "production"
   logger = ::Logger.new("log/production.log")
   logger.level = ::Logger::WARN
 when "development"
-  #logger = ::Logger.new(STDOUT)
-  logger = ::Logger.new("log/development.log")
+  logger = ::Logger.new(STDOUT)
+  #logger = ::Logger.new("log/development.log")
   logger.level = ::Logger::DEBUG
 else
   logger = ::Logger.new("/dev/null")
@@ -47,7 +47,7 @@ def db
   db = EventMachine::Synchrony::ConnectionPool.new(size: 20) do
     #newdb = EM::Mongo::Connection.new('172.16.0.9', 27017, 1, {:reconnect_in => 1}).db('test')
     #newdb = EM::Mongo::Connection.new('172.17.10.137', 27017, 1, {:reconnect_in => 1}).db('admin')
-    newdb = EM::Mongo::Connection.new('172.17.10.215', 27017, 1, {:reconnect_in => 1}).db('admin')
+    newdb = EM::Mongo::Connection.new('172.17.10.216', 30000, 1, {:reconnect_in => 1}).db('admin')
     newdb.authenticate('root', '123456')
     newdb
   end

@@ -93,7 +93,10 @@ post "/folder/create" do
     filelist = []
     parent_folder_id = params[:parent_folder_id]
     new_folder_name = params[:new_folder_name]
-    newfolder = Folder.where('parent_folder_id' => parent_folder_id, 'folder_name' => new_folder_name).first_or_initialize
+    if -1 == parent_folder_id.to_i then
+      parent_folder_id = get_user_root_folder
+    end
+    newfolder = Folder.where('parent_folder_id' => parent_folder_id.to_i, 'folder_name' => new_folder_name).first_or_initialize
     if nil == newfolder || nil == newfolder.folder_id then
       newfolder.username = "testuser"
       newfolder.create_time = Time.new
@@ -108,7 +111,7 @@ post "/folder/create" do
       end
     
       filelist = get_filelist(parent_folder_id, "", 0)
-      {'result' => 0, 'total' => filelist.count(), 'filelist' => filelist}.to_json
+      {'result' => 0, 'total' => filelist.count(), 'filelist' => filelist, 'new_folder_id' => newfolder.folder_id.to_i}.to_json
     else
       return {'result' => -1, 'error_msg' => "Folder \'#{new_folder_name}\' already exists"}.to_json
     end
@@ -173,6 +176,7 @@ def move_folder(src_folder_ids, dest_folder_id)
     begin
       folder = Folder.find(fd.to_i)
     rescue ActiveRecord::RecordNotFound => e
+	  raise ActiveRecord::Rollback
       status 400
       return {'result' => -1, 'error_msg' => "Folder doesn't exists."}.to_json
     end
@@ -188,8 +192,9 @@ def move_folder(src_folder_ids, dest_folder_id)
     end
     
     if error_flag == 1 then
-      p "destination folder is child of source folder!"
-      next
+      raise ActiveRecord::Rollback
+	  status 400
+	  return {'result' => -1, 'error_msg' => "destination folder is child of source folder!"}.to_json
     end
 
     folder_name = folder.folder_name
@@ -208,11 +213,13 @@ def move_folder(src_folder_ids, dest_folder_id)
     folder.parent_folder_id = dest_folder_id.to_i
 	folder.last_modified = Time.new
     if !folder.save then
+	  raise ActiveRecord::Rollback
       status 400
       return {'result' => -1, 'error_msg' => folder.errors}.to_json
     end
   end
   if error_flag_a == 1 then
+    raise ActiveRecord::Rollback
     status 400
     return {'result' => -1, 'error_msg' => "destination folder is child of source folder!"}.to_json
   end

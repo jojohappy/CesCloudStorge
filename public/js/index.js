@@ -13,7 +13,11 @@ var _GLOBE_DATA = (function() {
 		currentParentFolderId:'',
 		bathcMoveFileSelectedfolderId:'',
 		usedSpace:'',
-		isTrash:''
+		isTrash:'',
+		trashId:'',
+		isShare:'',
+		createFolder:'',
+		hasGroup:''
 	};
 	// 闭包返回
 	return function(key, val) {
@@ -45,19 +49,19 @@ $(document).ready(function(){
 $(window).resize(function () {
 	// 设置元素高度
     initDomSize();
+	if($(document.body)[0].clientWidth>900){
+		$('#liTrash').css('left',($(document.body)[0].clientWidth/2-470)+460+'px');
+	}
 });		
 
 var init = function(){
-	if('Microsoft Internet Explorer'===navigator.appName){
-		$('#uploadSelectBtn').hide();
-		$('#selectFileInfo').hide();
-	}else{
-		$('#attachment').hide();
-	}
+	
 	$('#navbarUserName').html('admin');
 	$('#ulJumbotronPath .hiddenLiPath').hide();
 	usedSpaceChange();
+
 	$('#loading').show();
+	
 	$.ajax({
 		url:'http://172.17.10.61:8081/list/folders',
 		data:{
@@ -66,13 +70,16 @@ var init = function(){
 		success:function(data){
 			var tempObj = data.folderlist;
 			getFileList(data.folderlist[0].folder_id);
+			
 			traversal(tempObj,0);
 			initTraversalEvent();
 		},
 		error:function(errorThrown){
 		
 		}
+		
 	});
+	_GLOBE_DATA('createFolder',false);
 	/*
 	$.ajax({
 		url:'http://172.17.10.61:8081/user/login',
@@ -99,6 +106,15 @@ var init = function(){
 };
 
 var initDomEvent = function(){
+	window.onbeforeunload = function() {
+		return "此操作将会离开云存储，确定吗？"; // return 这句必不可少
+	}
+	$(document).bind('keydown', function (e) {
+		var key = e.which;
+		if (key == 13) {
+			return false;
+		}
+	});
 	
 	$('#backBtn').click(function(){
 		getFileList(_GLOBE_DATA('currentParentFolderId'));
@@ -111,19 +127,19 @@ var initDomEvent = function(){
 	$('#divTitleFileName').bind('click',function(){
 		$('#divFileTitle .sort-arrow-down').hide();
 		$('#sortFileNameArrow').show().toggleClass('sort-arrow-up');
-		getFileList(_GLOBE_DATA('currentFolderId'),'file_name',$('#sortFileNameArrow').hasClass('sort-arrow-up')?'0':'1');
+		getFileList(_GLOBE_DATA('currentFolder'),'file_name',$('#sortFileNameArrow').hasClass('sort-arrow-up')?'0':'1');
 	});
 	
 	$('#divTitleFileSize').bind('click',function(){
 		$('#divFileTitle .sort-arrow-down').hide();
 		$('#sortFileSizeArrow').show().toggleClass('sort-arrow-up');
-		getFileList(_GLOBE_DATA('currentFolderId'),'file_size',$('#sortFileSizeArrow').hasClass('sort-arrow-up')?'0':'1');
+		getFileList(_GLOBE_DATA('currentFolder'),'file_size',$('#sortFileSizeArrow').hasClass('sort-arrow-up')?'0':'1');
 	});
 	
 	$('#divTitleFileTime').bind('click',function(){
 		$('#divFileTitle .sort-arrow-down').hide();
 		$('#sortFileTimeArrow').show().toggleClass('sort-arrow-up');
-		getFileList(_GLOBE_DATA('currentFolderId'),'last_modified',$('#sortFileTimeArrow').hasClass('sort-arrow-up')?'0':'1');
+		getFileList(_GLOBE_DATA('currentFolder'),'last_modified',$('#sortFileTimeArrow').hasClass('sort-arrow-up')?'0':'1');
 	});
 	
 	$('#navbarUsedSpaceProgress').resize(function(){
@@ -131,15 +147,11 @@ var initDomEvent = function(){
 	});
 
 	$('#navbarUserName').bind('mouseover',function(){
-		$(this).animate({
-			marginLeft:'-120px'
-		},{});
+
 	});
 
-	$('#aLogoutBtn').bind('mouseout',function(){
-		$('#navbarUserName').animate({
-			marginLeft:'0px'
-		},{});
+	$('#divLogoutBtn').bind('mouseout',function(){
+	
 	});
 	
 	$('#aMyDiskFolderPath').bind('click',function(){
@@ -160,58 +172,69 @@ var initDomEvent = function(){
 	
 	$('#copyFileConfirm').bind('click',function(){
 		$('#loading').show();
-		$.ajax({
-			url:'http://172.17.10.61:8081/file/copy',
-			type:'POST',
-			data:{
-				file_id:_GLOBE_DATA('hoverFileId'),
-				dest_folder_id:_GLOBE_DATA('copyFileSelectedfolderId'),
-				randomQuery: (new Date()).getTime()
-			},
-			success:function(data){
-				$('#copyFileCancle').trigger('click');
-				if(0===data.result){
-					successNotice('复制文件成功！');
-					getFileList(_GLOBE_DATA('currentFolder'));
-				}else{
+		if(''!==_GLOBE_DATA('copyFileSelectedfolderId')){
+			$.ajax({
+				url:'http://172.17.10.61:8081/file/copy',
+				type:'POST',
+				data:{
+					file_id:_GLOBE_DATA('hoverFileId'),
+					dest_folder_id:_GLOBE_DATA('copyFileSelectedfolderId'),
+					randomQuery: (new Date()).getTime()
+				},
+				success:function(data){
+					$('#copyFileCancle').trigger('click');
+					if(0===data.result){
+						successNotice('复制文件成功！');
+						getFileList(_GLOBE_DATA('currentFolder'));
+					}else{
+						errorNotice('复制文件失败！');
+					}
+					usedSpaceChange();
+					setTimeout("$('#loading').fadeOut();",300);
+					_GLOBE_DATA('copyFileSelectedfolderId','');
+				},
+				error:function(errorThrown){
+					$('#copyFileCancle').trigger('click');
 					errorNotice('复制文件失败！');
 				}
-				usedSpaceChange();
-				setTimeout("$('#loading').fadeOut();",600);
-			},
-			error:function(errorThrown){
-				$('#copyFileCancle').trigger('click');
-				errorNotice('复制文件失败！');
-			}
-		});
+			});
+		}else{
+			alert('请选择目标文件夹！');
+			setTimeout("$('#loading').fadeOut();",300);
+		}
 	});
 	
 	$('#batchCopyFileConfirm').bind('click',function(){
 		$('#loading').show();
-		$.ajax({
-			url:'http://172.17.10.61:8081/file/copy',
-			type:'POST',
-			data:{
-				file_id:_GLOBE_DATA('batchFileIdList'),
-				dest_folder_id:_GLOBE_DATA('copyFileSelectedfolderId'),
-				randomQuery: (new Date()).getTime()
-			},
-			success:function(data){
-				$('#batchCopyFileCancle').trigger('click');
-				if(0===data.result){
-					successNotice('批量复制多个文件成功！');
-					getFileList(_GLOBE_DATA('currentFolder'));
-				}else{
+		if(''!==_GLOBE_DATA('copyFileSelectedfolderId')){
+			$.ajax({
+				url:'http://172.17.10.61:8081/file/copy',
+				type:'POST',
+				data:{
+					file_id:_GLOBE_DATA('batchFileIdList'),
+					dest_folder_id:_GLOBE_DATA('copyFileSelectedfolderId'),
+					randomQuery: (new Date()).getTime()
+				},
+				success:function(data){
+					$('#batchCopyFileCancle').trigger('click');
+					if(0===data.result){
+						successNotice('批量复制多个文件成功！');
+						getFileList(_GLOBE_DATA('currentFolder'));
+					}else{
+						errorNotice('批量复制多个文件失败！');
+					}
+					usedSpaceChange();
+					setTimeout("$('#loading').fadeOut();",300);
+					_GLOBE_DATA('copyFileSelectedfolderId','');
+				},
+				error:function(errorThrown){
+					$('#copyFileCancle').trigger('click');
 					errorNotice('批量复制多个文件失败！');
 				}
-				usedSpaceChange();
-				setTimeout("$('#loading').fadeOut();",600);
-			},
-			error:function(errorThrown){
-				$('#copyFileCancle').trigger('click');
-				errorNotice('批量复制多个文件失败！');
-			}
-		});
+			});
+		}else{
+			alert('请选目标文件夹！');
+		}
 	});
 	
 	$('#moveConfirm').bind('click',function(){
@@ -225,60 +248,86 @@ var initDomEvent = function(){
 			tempType = 'file';
 		}
 		$('#loading').show();
-		$.ajax({
-			url:'http://172.17.10.61:8081/'+tempType+'/move',
-			type:'POST',
-			data:{
-				file_id:tempFileId,
-				folder_id:tempFolderId,
-				dest_folder_id:_GLOBE_DATA('moveFileSelectedfolderId'),
-				randomQuery: (new Date()).getTime()
-			},
-			success:function(data){
-				$('#moveCancle').trigger('click');
-				if(0===data.result){
-					successNotice('移动成功！');
-					getFileList(_GLOBE_DATA('currentFolder'));
-				}else{
+		if(''!==_GLOBE_DATA('moveFileSelectedfolderId')){
+			$.ajax({
+				url:'http://172.17.10.61:8081/'+tempType+'/move',
+				type:'POST',
+				data:{
+					file_id:tempFileId,
+					folder_id:tempFolderId,
+					dest_folder_id:_GLOBE_DATA('moveFileSelectedfolderId'),
+					randomQuery: (new Date()).getTime()
+				},
+				success:function(data){
+					$('#moveCancle').trigger('click');
+					if(0===data.result){
+						successNotice('移动成功！');
+						getFileList(_GLOBE_DATA('currentFolder'));
+					}else{
+						errorNotice('移动失败！');
+					}
+					setTimeout("$('#loading').fadeOut();",300);
+					_GLOBE_DATA('moveFileSelectedfolderId','');
+				},
+				error:function(errorThrown){
+					$('#moveCancle').trigger('click');
 					errorNotice('移动失败！');
 				}
-				setTimeout("$('#loading').fadeOut();",600);
-			},
-			error:function(errorThrown){
-				$('#moveCancle').trigger('click');
-				errorNotice('移动失败！');
-			}
-		});
+			});
+		}else{
+			alert('请选择目标文件夹！');
+			setTimeout("$('#loading').fadeOut();",300);
+		}
 	});
 	
 	$('#batchMoveConfirm').bind('click',function(){
 		var tempFolderListId = _GLOBE_DATA('batchFolderIdList');
 		var tempFileListId = _GLOBE_DATA('batchFileIdList');
 		$('#loading').show();
-		$.ajax({
-			url:'http://172.17.10.61:8081/list/move',
-			type:'POST',
-			data:{
-				folder_id:tempFolderListId,
-				file_id:tempFileListId,
-				dest_folder_id:_GLOBE_DATA('bathcMoveFileSelectedfolderId'),
-				randomQuery: (new Date()).getTime()
-			},
-			success:function(data){
-				$('#batchMoveCancle').trigger('click');
-				if(0===data.result){
-					successNotice('批量移动多个文件/文件夹成功！');
-					getFileList(_GLOBE_DATA('currentFolder'));
-				}else{
-					errorNotice('批量移动多个文件/文件夹失败！');
+		if(''!==_GLOBE_DATA('bathcMoveFileSelectedfolderId')){
+			$.ajax({
+				url:'http://172.17.10.61:8081/list/move',
+				type:'POST',
+				data:{
+					folder_id:tempFolderListId,
+					file_id:tempFileListId,
+					dest_folder_id:_GLOBE_DATA('bathcMoveFileSelectedfolderId'),
+					randomQuery: (new Date()).getTime()
+				},
+				success:function(data){
+					$('#batchMoveCancle').trigger('click');
+					if(_GLOBE_DATA('isTrash')){
+						if(0===data.result){
+							successNotice('批量还原多个文件/文件夹成功！');
+							getFileList(_GLOBE_DATA('currentFolder'));
+						}else{
+							errorNotice('批量还原多个文件/文件夹失败！');
+						}
+					}else{
+						if(0===data.result){
+							successNotice('批量移动多个文件/文件夹成功！');
+							getFileList(_GLOBE_DATA('currentFolder'));
+						}else{
+							errorNotice('批量移动多个文件/文件夹失败！');
+						}
+					}
+					
+					setTimeout("$('#loading').fadeOut();",300);
+					_GLOBE_DATA('bathcMoveFileSelectedfolderId','');
+				},
+				error:function(errorThrown){
+					$('#batchMoveCancle').trigger('click');
+					if(_GLOBE_DATA('isTrash')){
+						errorNotice('批量还原多个文件/文件夹失败！');
+					}else{
+						errorNotice('批量移动多个文件/文件夹失败！');
+					}
 				}
-				setTimeout("$('#loading').fadeOut();",600);
-			},
-			error:function(errorThrown){
-				$('#batchMoveCancle').trigger('click');
-				errorNotice('批量移动多个文件/文件夹失败！');
-			}
-		});
+			});
+		}else{
+			alert('请选择目标文件夹！');
+			setTimeout("$('#loading').fadeOut();",300);
+		}
 	});
 	
 	$('#batchDeleteConfirm').bind('click',function(){
@@ -305,7 +354,7 @@ var initDomEvent = function(){
 					errorNotice('删除多个文件/文件夹失败！');
 				}
 				usedSpaceChange();
-				setTimeout("$('#loading').fadeOut();",600);
+				setTimeout("$('#loading').fadeOut();",300);
 			},
 			error:function(errorThrown){
 				$('#batchDeleteCancle').trigger('click');
@@ -338,7 +387,7 @@ var initDomEvent = function(){
 						errorNotice('删除文件夹失败！');
 					}
 					usedSpaceChange();
-					setTimeout("$('#loading').fadeOut();",600);
+					setTimeout("$('#loading').fadeOut();",300);
 				},
 				error:function(errorThrown){
 					$('#deleteCancle').trigger('click');
@@ -365,7 +414,8 @@ var initDomEvent = function(){
 					}else{
 						errorNotice('删除文件失败！');
 					}
-					setTimeout("$('#loading').fadeOut();",600);
+					usedSpaceChange();
+					setTimeout("$('#loading').fadeOut();",300);
 				},
 				error:function(errorThrown){
 					$('#deleteCancle').trigger('click');
@@ -377,22 +427,27 @@ var initDomEvent = function(){
 	});
 	
 	$('#btnCreateFolder').bind('click',function(){
-		$('#ulFile').prepend('<li id="liCreateFolder">'
-			+'<div class="div-file-checkbox" id="">'
-			+'</div>'
-			+'<div class="div-file-icon" id="">'
-			+'</div>'
-			+'<div class="div-file-name-action" id="">'
-				+'<input type="text" id="createFolderInput" class="create-folder-input" name="" />'
-				+'<button id="createFolderConfirm" class="btn btn-info create-folder-confirm">确定</button>'
-				+'<button id="createFolderCancle" class="btn create-folder-cancle">取消</button>'
-			+'</div>'
-			+'<div class="div-file-size" id="">'
-			+'</div>'
-			+'<div class="div-file-time" id="">'
-			+'</div>'
-		+'</li>');
-		initCreateFolderEvent();
+		if(!_GLOBE_DATA('createFolder')){
+			_GLOBE_DATA('createFolder',true);
+			$('#ulFile').prepend('<li id="liCreateFolder">'
+				+'<div class="div-file-checkbox" id="">'
+				+'</div>'
+				+'<div class="div-file-icon" id="">'
+				+'</div>'
+				+'<div class="div-file-name-action" id="">'
+					+'<input type="text" size="32"  maxlength="32" id="createFolderInput" class="create-folder-input" name="" />'
+					+'<button id="createFolderConfirm" class="btn btn-info create-folder-confirm">确定</button>'
+					+'<button id="createFolderCancle" class="btn create-folder-cancle">取消</button>'
+				+'</div>'
+				+'<div class="div-file-shared" id="">'
+				+'</div>'
+				+'<div class="div-file-size" id="">'
+				+'</div>'
+				+'<div class="div-file-time" id="">'
+				+'</div>'
+			+'</li>');
+			initCreateFolderEvent();
+		}
 	});
 	
 	$('#batchDelete').bind('click',function(){
@@ -406,6 +461,7 @@ var initDomEvent = function(){
 	
 	$('#batchMove').bind('click',function(){
 		getFileTree();
+		$('#batchMoveH5').html('选择移动的位置,当前位置：'+$('#aMyDiskFolderPath').html()+(($('#liHiddenFolderPath').css('display')==='none')?'':$('#liHiddenFolderPath').html())+(($('#aLastFolderPath').html()==='')?'':'/')+$('#aLastFolderPath').html()+(($('#liCurrenFolderPath').css('display')==='none')?'':$('#liCurrenFolderPath').html()));
 		var tempFileIdListCount = _GLOBE_DATA('batchFileIdList').split(',').length;
 		var tempFolderIdListCount = _GLOBE_DATA('batchFolderIdList').split(',').length;
 		if(4>tempFileIdListCount+tempFolderIdListCount){
@@ -416,6 +472,9 @@ var initDomEvent = function(){
 	
 	$('#batchCopy').bind('click',function(){
 		getFileTree();
+		$('#copyH5').html('选择移动的位置,当前位置：'+$('#aMyDiskFolderPath').html()+(($('#liHiddenFolderPath').css('display')==='none')?'':$('#liHiddenFolderPath').html())+(($('#aLastFolderPath').html()==='')?'':'/')+$('#aLastFolderPath').html()+(($('#liCurrenFolderPath').css('display')==='none')?'':$('#liCurrenFolderPath').html()));
+		$('#singleCopyBtn').hide();
+		$('#batchCopyBtn').show();
 		var tempFileIdListCount = _GLOBE_DATA('batchFileIdList').split(',').length;
 		if(3>tempFileIdListCount){
 			errorNotice('请选择至少两个文件，且不包含文件夹。');
@@ -423,31 +482,76 @@ var initDomEvent = function(){
 		}
 	});
 	
-	$('#batchCopy').bind('click',function(){
-		$('#singleCopyBtn').hide();
-		$('#batchCopyBtn').show();
-	});	
-	
 	$('#uploadBtn').bind('click',function(){
-		upload();
+		if('Microsoft Internet Explorer'!==navigator.appName){
+			if(!$('#attachment')[0].files[0]){
+				alert('请选择要上传的文件！');
+			}else{
+				upload();
+			}
+		}else{
+			if(document.getElementById('attachment').value){
+				//console.log(document.getElementById('attachment').value);
+				upload();
+			}else{
+				alert('请选择要上传的文件！');
+			}
+		}
 	});
-	
+			
 	$('#uploadSelectBtn').bind('click',function(){
 		$('#attachment').trigger('click');
 	});
 	
-	$('#attachment').bind('change',function(){
-		$('#selectFileInfo').html($(this).val().split('\\').pop());
+	
+	
+	$('#toolbarUploadBtn').bind('click',function(){
+		$('#selectFileInfo').html('');
+		$('#divUpload input').remove();
+		$('#divUpload').append(
+			'<input type="file" id="attachment" name="attachment" style="float:left;" class=""/>'
+		);
+		if('Microsoft Internet Explorer'===navigator.appName){
+			$('#uploadSelectBtn').hide();
+			$('#selectFileInfo').hide();
+		}else{
+			$('#attachment').hide();
+		}
+		$('#attachment').bind('change',function(){
+		
+			if('Microsoft Internet Explorer'!==navigator.appName||' 10.0'==navigator.appVersion.split('MSIE')[1].split(';')[0]){
+				if(100*1024*1024<this.files[0].size){
+					alert('请勿上传大于100MB的文件！');
+					$('#uploadCancle').trigger('click');
+				}else{
+					$('#selectFileInfo').html($(this).val().split('\\').pop());
+				}
+			}else{
+				
+			}
+		});
+		
 	});
 	
 	$('#checkboxSelectAll').bind('change',function(){
-		$('#ulFile .file-checkbox').click();
+		$('#ulFile .file-checkbox').trigger('click');
+		if($(this)[0].checked){
+			$('#ulFile .file-checkbox').attr('checked','checked');
+		}else{
+			$('#ulFile .file-checkbox').removeAttr('checked');
+		}
+	});
+	
+	$('#openShareFolder').bind('click',function(){
+		getFileList(-20);
 	});
 };
 
 var initCreateFolderEvent = function(){
 	$('#createFolderInput').focus();
+
 	$('#createFolderConfirm').bind('click',function(){
+		_GLOBE_DATA('createFolder',false);
 		$('#loading').show();
 		$.ajax({
 			url:'http://172.17.10.61:8081/folder/create',
@@ -464,7 +568,7 @@ var initCreateFolderEvent = function(){
 				}else{
 					errorNotice('创建文件夹失败！');
 				}
-				setTimeout("$('#loading').fadeOut();",600);
+				setTimeout("$('#loading').fadeOut();",300);
 			},
 			error:function(errorThrown){
 				errorNotice('创建文件夹失败！');
@@ -474,6 +578,7 @@ var initCreateFolderEvent = function(){
 	
 	$('#createFolderCancle').bind('click',function(){
 		$('#liCreateFolder').remove();
+		_GLOBE_DATA('createFolder',false);
 	});
 };
 
@@ -486,13 +591,15 @@ var initDomSize = function(){
 };
 
 var getFileList = function(folderId,sort,reverse){
-
+	$('#checkboxSelectAll').removeAttr('checked');
 	$('#liBatchMove').addClass('disabled','disabled');
 	$('#liBatchDelete').addClass('disabled','disabled');
 	$('#liBatchCopy').addClass('disabled','disabled');
 	_GLOBE_DATA('batchFileIdList','');
 	_GLOBE_DATA('batchFolderIdList','');
 	if(!sort){
+		$('#divFileTitle .sort-arrow-down').hide();
+		$('#sortFileNameArrow').show().addClass('sort-arrow-up');
 		sort='';
 	}
 	if(!reverse){
@@ -510,17 +617,56 @@ var getFileList = function(folderId,sort,reverse){
 		},
 		success:function(data){
 			_GLOBE_DATA('currentParentFolderId',data.parent_folder_id);
-			if(-10===_GLOBE_DATA('currentParentFolderId')){
+			if(-1===_GLOBE_DATA('currentParentFolderId')){
+				_GLOBE_DATA('trashId',data.filelist[0].folder_id);
+				_GLOBE_DATA('isTrash',false);
+				_GLOBE_DATA('isShare',false);
+				$('#batchMove').html('移动');
+				$('#batchDelete').html('删除');
+				$('#liBatchCopy').show();
+				$('#liBatchMove').show();
+				$('#liBatchDelete').show();
+				$('#batchMoveLabel').html('移动');
+				$('#batchMoveH5').html('选择移动的位置');
+				$('#toolbarUploadBtn').removeAttr('disabled');
+				$('#btnCreateFolder').removeAttr('disabled');
+				$('#btnToolBarCover').hide();
+			}else if(-10===_GLOBE_DATA('currentParentFolderId')){
 				_GLOBE_DATA('isTrash',true);
 				_GLOBE_DATA('currentParentFolderId','-1');
 				$('#batchMove').html('还原');
 				$('#batchDelete').html('永久删除');
 				$('#liBatchCopy').hide();
+				$('#liBatchMove').show();
+				$('#liBatchDelete').show();
+				$('#batchMoveLabel').html('还原');
+				$('#batchMoveH5').html('选择还原的位置');
+				$('#toolbarUploadBtn').attr('disabled','disabled');
+				$('#btnCreateFolder').attr('disabled','disabled');
+				$('#btnToolBarCover').show();
+			}else if(-20===_GLOBE_DATA('currentParentFolderId')){
+				_GLOBE_DATA('isShare',true);
+				_GLOBE_DATA('isTrash',false);
+				_GLOBE_DATA('currentParentFolderId','-1');
+				$('#liBatchCopy').show();
+				$('#liBatchMove').hide();
+				$('#liBatchDelete').hide();
+				$('#toolbarUploadBtn').attr('disabled','disabled');
+				$('#btnCreateFolder').attr('disabled','disabled');
+				$('#btnToolBarCover').show();
 			}else{
 				_GLOBE_DATA('isTrash',false);
+				_GLOBE_DATA('isShare',false);
 				$('#batchMove').html('移动');
 				$('#batchDelete').html('删除');
 				$('#liBatchCopy').show();
+				$('#batchMoveLabel').html('移动');
+				$('#batchMoveH5').html('选择移动的位置');
+				$('#liBatchMove').show();
+				$('#liBatchDelete').show();
+				$('#toolbarUploadBtn').removeAttr('disabled');
+				$('#btnCreateFolder').removeAttr('disabled');
+				$('#btnToolBarCover').hide();
 			}
 			
 			createFileListDom(data.filelist,data.folderlist);
@@ -530,7 +676,7 @@ var getFileList = function(folderId,sort,reverse){
 			}else{
 				$('#backBtn').removeAttr('disabled');
 			}
-			setTimeout("$('#loading').fadeOut();",600);
+			setTimeout("$('#loading').fadeOut();",300);
 		},
 		error:function(errorThrown){
 		
@@ -539,11 +685,16 @@ var getFileList = function(folderId,sort,reverse){
 };
 
 var downloadFile = function(fileId){
-	window.open('http://172.17.10.61/file/download?file_id='+fileId);
+	window.open('http://172.17.10.61/file/download?file_id='+fileId+'&randomQuery='+(new Date()).getTime());
 };
 
 var createFileListDom = function(fileList,folderlist){
-	var tempHtml='';
+	var tempHtml= '<li class="li-trash" id="liTrash" folderId='+_GLOBE_DATA('trashId')+' fileId="-1">'
+					+'<div class="div-file-icon" title="回收站">'
+						+'<button class="btn img-file-icon trash-icon">回收站</button>'
+					//	+'<img src="./img/icon/icon-trash.png" class="img-file-icon trash-icon"/>'
+					+'</div>'
+				+'</li>';
 	if(_GLOBE_DATA('isTrash')){
 		for(var i = 0; i<fileList.length;i++){
 			tempHtml = tempHtml
@@ -566,38 +717,15 @@ var createFileListDom = function(fileList,folderlist){
 					+'<button class="btn btn-info create-folder-confirm rename-confirm">确定</button>'
 					+'<button class="btn create-folder-cancle rename-cancle">取消</button>'
 				+'</div>'
+				+'<div class="div-file-shared"></div>'
 				+'<div class="div-file-size">'+formatByte(((-1===fileList[i].size)?'/':fileList[i].size))+'</div>'
 				+'<div class="div-file-time">'+fileList[i].last_modified+'</div>'
 			+'</li>';
 		}
-	}else{
+	}else if(_GLOBE_DATA('isShare')){
 		for(var i = 0; i<fileList.length;i++){
-			if(-10===fileList[i].parent_folder_id){
-				tempHtml = tempHtml
-				+'<li class="'+((0===i%2)?'li-background-blue':'')+'" folderId='+fileList[i].folder_id+' fileId='+fileList[i].file_id+'>'
-					+'<div class="div-file-checkbox">'
-						
-					+'</div>'
-					+'<div class="div-file-icon">'
-						+'<img src="./img/icon/icon-trash.png" class="img-file-icon"/>'
-					+'</div>'
-					+'<div class="div-file-name-action">'
-						+'<div class="div-file-name"><span class="span-file-name">'+fileList[i].name+'</span></div>'
-						+'<div class="div-file-action hidden">'
-							
-						+'</div>'
-					+'</div>'
-					+'<div class="div-file-rename hidden">'
-						+'<input type="text" class="create-folder-input rename-input" name="" />'
-						+'<button class="btn btn-info create-folder-confirm rename-confirm">确定</button>'
-						+'<button class="btn create-folder-cancle rename-cancle">取消</button>'
-					+'</div>'
-					+'<div class="div-file-size">/</div>'
-					+'<div class="div-file-time">/</div>'
-				+'</li>';
-			}else{
-				tempHtml = tempHtml
-				+'<li class="'+((0===i%2)?'li-background-blue':'')+'" folderId='+fileList[i].folder_id+' fileId='+fileList[i].file_id+'>'
+			tempHtml = tempHtml
+				+'<li class="'+((tempNum===i%2)?'li-background-blue':'')+'" folderId='+fileList[i].folder_id+' fileId='+fileList[i].file_id+'>'
 					+'<div class="div-file-checkbox">'
 						+'<input type="checkbox" class="file-checkbox"/>'
 					+'</div>'
@@ -608,10 +736,7 @@ var createFileListDom = function(fileList,folderlist){
 						+'<div class="div-file-name"><span class="span-file-name">'+fileList[i].name+'</span></div>'
 						+'<div class="div-file-action hidden">'
 							+((''===fileList[i].mime_type)?'':'<button class="btn btn-info btn-mini btn-file-action btn-file-download" type="button">下载</button>')
-							+'<a href="#moveModal" role="button" class="btn btn-mini btn-file-action btn-file-action-move" type="button" data-toggle="modal">移动</a>'
 							+((''===fileList[i].mime_type)?'':'<a href="#copyModal" role="button" class="btn btn-mini btn-file-action btn-file-action-copy" type="button" data-toggle="modal">复制</a>')
-							+'<button class="btn btn-mini btn-file-action btn-rename" type="button">重命名</button>'
-							+'<a href="#deleteModal" role="button" class="btn btn-mini btn-danger btn-file-action" type="button" data-toggle="modal">删除</a>'
 						+'</div>'
 					+'</div>'
 					+'<div class="div-file-rename hidden">'
@@ -619,6 +744,43 @@ var createFileListDom = function(fileList,folderlist){
 						+'<button class="btn btn-info create-folder-confirm rename-confirm">确定</button>'
 						+'<button class="btn create-folder-cancle rename-cancle">取消</button>'
 					+'</div>'
+					+'<div class="div-file-shared"></div>'
+					+'<div class="div-file-size">'+formatByte(((-1===fileList[i].size)?'/':fileList[i].size))+'</div>'
+					+'<div class="div-file-time">'+fileList[i].last_modified+'</div>'
+				+'</li>';
+		}
+	}else{
+		var tempNum = 0;
+		for(var i = 0; i<fileList.length;i++){
+			if(-10===fileList[i].parent_folder_id){
+				tempNum = 1;
+			}else{
+				tempHtml = tempHtml
+				+'<li class="'+((tempNum===i%2)?'li-background-blue':'')+'" folderId='+fileList[i].folder_id+' fileId='+fileList[i].file_id+'>'
+					+'<div class="div-file-checkbox">'
+						+'<input type="checkbox" class="file-checkbox"/>'
+					+'</div>'
+					+'<div class="div-file-icon">'
+						+'<img src="./img/icon/icon-'+((''===fileList[i].mime_type)?'folder':fileList[i].mime_type)+'.png" class="img-file-icon"/>'
+					+'</div>'
+					+'<div class="div-file-name-action">'
+						+'<div class="div-file-name"><span class="span-file-name">'+fileList[i].name+((0===fileList[i].share.length)?'':'')+'</span></div>'
+						+'<div class="div-file-action hidden">'
+							+((''===fileList[i].mime_type)?'':'<button class="btn btn-info btn-mini btn-file-action btn-file-download" type="button">下载</button>')
+							+'<a href="#moveModal" role="button" class="btn btn-mini btn-file-action btn-file-action-move" type="button" data-toggle="modal">移动</a>'
+							+((''===fileList[i].mime_type)?'':'<a href="#copyModal" role="button" class="btn btn-mini btn-file-action btn-file-action-copy" type="button" data-toggle="modal">复制</a>')
+							+'<button class="btn btn-mini btn-file-action btn-rename" type="button">重命名</button>'
+							+'<a href="#deleteModal" role="button" class="btn btn-mini btn-danger btn-file-action" type="button" data-toggle="modal">删除</a>'
+							+((''===fileList[i].mime_type)?'':'<a role="button" class="btn btn-mini btn-file-action btn-file-action-share" type="button">分享</a>')
+							+((0===fileList[i].share.length)?'':'<a role="button" class="btn btn-mini btn-file-action btn-file-action-unshare" type="button">取消分享</a>')
+						+'</div>'
+					+'</div>'
+					+'<div class="div-file-rename hidden">'
+						+'<input type="text" class="create-folder-input rename-input" name="" />'
+						+'<button class="btn btn-info create-folder-confirm rename-confirm">确定</button>'
+						+'<button class="btn create-folder-cancle rename-cancle">取消</button>'
+					+'</div>'
+					+'<div class="div-file-shared">'+((0===fileList[i].share.length)?'':'✔')+'</div>'
 					+'<div class="div-file-size">'+formatByte(((-1===fileList[i].size)?'/':fileList[i].size))+'</div>'
 					+'<div class="div-file-time">'+fileList[i].last_modified+'</div>'
 				+'</li>';
@@ -634,7 +796,7 @@ var createFileListDom = function(fileList,folderlist){
 		$('#liCurrenFolderPath').hide();
 		$('#liLastFolderPath').hide();
 	}else if(2===folderlistCount){
-		$('#liCurrenFolderPath').html(folderlist[0].folder_name).show();
+		$('#liCurrenFolderPath').html('<span class="divider">/</span>'+folderlist[0].folder_name).show();
 		$('#aMyDiskFolderPath').attr('folderId',folderlist[1].folder_id);
 		$('#liLastFolderPath').hide();
 	}else if(2<folderlistCount){
@@ -643,7 +805,7 @@ var createFileListDom = function(fileList,folderlist){
 		}else{
 			$('#liHiddenFolderPath').hide();
 		}
-		$('#liCurrenFolderPath').html(folderlist[0].folder_name).show();
+		$('#liCurrenFolderPath').html('<span class="divider">/</span>'+folderlist[0].folder_name).show();
 		$('#aLastFolderPath').html(folderlist[1].folder_name).attr('folderId',folderlist[1].folder_id).parent().show();
 		$('#aMyDiskFolderPath').attr('folderId',folderlist[folderlistCount-1].folder_id);
 	}
@@ -652,9 +814,68 @@ var createFileListDom = function(fileList,folderlist){
 };
 
 var fileListDomEvent = function(){
+	$('#liTrash').css('left',($(document.body)[0].clientWidth/2-470)+460+'px');
+	$('#loading').show();
+	$.ajax({
+		url:'http://172.17.10.61:8081/tenants',
+		type:'GET',
+		data:{
+			randomQuery: (new Date()).getTime()
+		},
+		success:function(data){
+			var tmpHtml = '<ul id="ulTenants">';
+			var tempObj = data.tenants;
+			if(tempObj){
+				_GLOBE_DATA('hasGroup',true);
+				for(var i = 0;i<tempObj.length;i++){
+					tmpHtml = tmpHtml + '<li class="li-tenants" tenantsId="'+tempObj[i].id+'" onclick="liTenantsClick(event)">'+tempObj[i].name+'</li>'
+				}
+				tmpHtml = tmpHtml+'</ul>';
+				$('#ulFile .btn-file-action-share').popover({
+					placement:'right',
+					title:'选择分享工作区',
+					content:tmpHtml,
+					html:'true'
+				});
+			}else{
+				_GLOBE_DATA('hasGroup',false);
+			}
+			setTimeout("$('#loading').fadeOut();",300);
+		},
+		error:function(errorThrown){
+		}
+	});
+	$('#ulFile .btn-file-action-share').bind('click',function(){
+		if(!_GLOBE_DATA('hasGroup')){
+			errorNotice('您尚未加入任何小组，无法分享文件！');
+		}
+	});
+	
+	$('#ulFile .btn-file-action-unshare').bind('click',function(){
+		getFileTree();
+		$.ajax({
+			url:'http://172.17.10.61:8081/share',
+			data:{
+				entity:'private',
+				file_id:_GLOBE_DATA('hoverFileId'),
+				randomQuery: (new Date()).getTime()
+			},
+			success:function(data){
+				if(0===data.result){
+					successNotice('取消文件共享成功！');
+					//getFileList(_GLOBE_DATA('currentFolder'));
+				}else{
+					errorNotice('取消文件共享失败！');
+				}
+				getFileList(_GLOBE_DATA('currentFolder'));
+			},
+			error:function(errorThrown){
+				errorNotice('取消文件共享失败！');
+			}
+		});
+	});
 	
 	$('#ulFile .file-checkbox').bind('change',function(){
-		console.log('here');
 		$('#liBatchMove').addClass('disabled');
 		$('#liBatchCopy').addClass('disabled');
 		$('#liBatchDelete').addClass('disabled');
@@ -719,11 +940,11 @@ var fileListDomEvent = function(){
 		openFileOrFolder();
 	});
 	
-	
 	$('#ulFile .btn-file-action-move').bind('click',function(){
 		getFileTree();
 		$('#moveLabel').html('移动');
-		$('#moveH5').html('选择移动的位置');
+
+		$('#moveH5').html('选择移动的位置,当前位置：'+$('#aMyDiskFolderPath').html()+(($('#liHiddenFolderPath').css('display')==='none')?'':$('#liHiddenFolderPath').html())+(($('#aLastFolderPath').html()==='')?'':'/')+$('#aLastFolderPath').html()+(($('#liCurrenFolderPath').css('display')==='none')?'':$('#liCurrenFolderPath').html()));
 	});
 	
 	$('#ulFile .btn-file-action-restore').bind('click',function(){
@@ -735,6 +956,8 @@ var fileListDomEvent = function(){
 	$('#ulFile .btn-file-action-copy').bind('click',function(){
 		$('#singleCopyBtn').show();
 		$('#batchCopyBtn').hide();
+		
+		$('#copyH5').html('选择移动的位置,当前位置：'+$('#aMyDiskFolderPath').html()+(($('#liHiddenFolderPath').css('display')==='none')?'':$('#liHiddenFolderPath').html())+(($('#aLastFolderPath').html()==='')?'':'/')+$('#aLastFolderPath').html()+(($('#liCurrenFolderPath').css('display')==='none')?'':$('#liCurrenFolderPath').html()));
 		getFileTree();
 	});
 	
@@ -770,7 +993,7 @@ var fileListDomEvent = function(){
 				}else{
 					errorNotice('重命名失败！');
 				}
-				setTimeout("$('#loading').fadeOut();",600);
+				setTimeout("$('#loading').fadeOut();",300);
 			},
 			error:function(errorThrown){
 				errorNotice('重命名失败！');
@@ -781,6 +1004,33 @@ var fileListDomEvent = function(){
 	$('#ulFile .rename-cancle').bind('click',function(){
 		$(this).parent().hide().prev().show();
 	});
+};
+
+var liTenantsClick = function(e){
+	$('#loading').show();
+	$.ajax({
+		url:'http://172.17.10.61:8081/share',
+		data:{
+			share_tenants:e.target?($(e.target).attr('tenantsId')):($(e.srcElement).attr('tenantsId')),
+			entity:'share',
+			file_id:e.target?($(e.target).parent().parent().parent().parent().parent().parent().attr('fileId')):($(e.srcElement).parent().parent().parent().parent().parent().parent().attr('fileId')),
+			randomQuery: (new Date()).getTime()
+		},
+		success:function(data){
+			e.target?($(e.target).parent().parent().parent().prev().popover('hide')):($(e.srcElement).parent().parent().parent().prev().popover('hide'));
+			if(0===data.result){
+				successNotice('文件共享成功！');
+				//getFileList(_GLOBE_DATA('currentFolder'));
+			}else{
+				errorNotice('文件共享失败！');
+			}
+			getFileList(_GLOBE_DATA('currentFolder'));
+		},
+		error:function(jqXHR,textStatus,errorThrown){
+			errorNotice('文件共享失败！');
+		}
+	});
+	
 };
 
 var openFileOrFolder = function(){
@@ -831,7 +1081,7 @@ var traversal = function(obj,deep){
 						+'</span>'
 						+'<span class="span-folder-tree-name" folderId="'+obj[i].folder_id+'">'
 							+'<img src="./img/icon/icon-folder.png" class="img-file-tree-icon"/>&nbsp;'
-							+obj[i].folder_name
+							+obj[i].folder_name+(('Microsoft Internet Explorer'===navigator.appName&&4===parseFloat(navigator.appVersion))?'　':'')
 						+'&nbsp;</span>'
 					+'</div>'
 				+'<div class="file-tree-content">');
@@ -890,6 +1140,7 @@ var initTraversalEvent = function(){
 	$($($('#folderTreeForCopyFile .div-folder-tree-name')[0]).children()[0]).click();
 	$($($('#folderTreeForMoveFile .div-folder-tree-name')[0]).children()[0]).click();
 	$($($('#folderTreeForBatchMoveFile .div-folder-tree-name')[0]).children()[0]).click();
+	
 };
 
 var usedSpaceChange = function(){
@@ -906,6 +1157,7 @@ var usedSpaceChange = function(){
 				duration:500,
 				easing:'linear'
 			});
+			$('#navbarUsedSpaceText').html('已使用 '+_GLOBE_DATA('usedSpace')+' / 5 GB ('+(($('#navbarUsedSpaceProgress').width()/250)*100).toFixed(2)+'%)');
 		},
 		error:function(errorThrown){
 		
@@ -919,19 +1171,21 @@ var successNotice = function(text){
 	//$('#noticeLargeError').hide();
 	//$('#noticeLargeSuccess').show();
 	//$('#notice').modal('show');
-	$('#divNoticeInfo').html(text).removeClass('bg-red').animate({height:'30px'},{});
-	setTimeout("$('#divNoticeInfo').animate({height:'0px'},{queue:false});",5000);
+	$('#divNoticeInfo').stop();
+	$('#divNoticeInfo').html(text).removeClass('bg-red').animate({height:'30px'},{queue:false}).delay(5000).animate({height:'0px'},{queue:true});
+	//setTimeout("$('#divNoticeInfo').animate({height:'0px'},{queue:false});",5000);
 };
 
 var errorNotice = function(text){
-	$('#divNoticeInfo').html(text).addClass('bg-red').animate({height:'30px'},{});
 	//$('#noticeText').html(text);
 	//$('#noticeButton').addClass('btn-danger').removeClass('btn-success');
 	//$('#noticeLargeError').show();
 	//$('#noticeLargeSuccess').hide();
 	//$('#notice').modal('show');
-	setTimeout("$('#divNoticeInfo').animate({height:'0px'},{queue:false});",5000);
-	setTimeout("$('#loading').fadeOut();",600);
+	$('#divNoticeInfo').stop();
+	$('#divNoticeInfo').html(text).addClass('bg-red').animate({height:'30px'},{queue:false}).delay(5000).animate({height:'0px'},{queue:true});
+	//setTimeout("$('#divNoticeInfo').animate({height:'0px'},{queue:false});",5000);
+	setTimeout("$('#loading').fadeOut();",300);
 };
 
 var formatByte = function(size){
@@ -950,6 +1204,7 @@ var formatByte = function(size){
 
 var upload = function(){
 	$("#uploadLoading").show();
+	//console.log($('#attachment').val());
 	$.ajaxFileUpload({
 		url:'http://172.17.10.61:8081/file/upload',//用于文件上传的服务器端请求地址
 		secureuri:false,//一般设置为false
@@ -960,13 +1215,15 @@ var upload = function(){
 			randomQuery:(new Date()).getTime()
 		},
 		complete:function(xmlhttp,textStatus ){
+			$('#attachment').remove();
 			$("#uploadLoading").hide();
 			$('#uploadCancle').trigger('click');
 			getFileList(_GLOBE_DATA('currentFolder'));
 			if('success'==xmlhttp.responseText){
+				usedSpaceChange();
 				successNotice('上传成功!');
 			}else{
-				errorNotice('上传失败!文件已存在');
+				errorNotice('上传失败!请确定没有重复文件且小于100M');
 			}
 		},
 		success:function(data,textStatus,jqXHR){

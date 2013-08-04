@@ -42,11 +42,12 @@ get "/oauth2/auth" do
   end
   
   # 用户名密码校验
-  response = RestClient.post 'http://172.17.10.76:8080/cas-server/v1/authenticateUser', {:username => username, :password => password}, {:content_type => :json, :accept => :json}
-  json = JSON.parse(response.body)
-  if json['result'] == "failure" then
-    {'result' => -1, 'error_msg' => 'Error: invalid user name or password'}.to_json
-  end
+  #RestClient.post('http://172.17.10.210/cas-server/v1/authenticateUser', {:username => username, :password => password}, {:content_type => :json, :accept => :json}){ |response, request, result, &block| 
+    #json = JSON.parse(response.body)
+    #if json['result'] == "failure" then
+      #{'result' => -1, 'error_msg' => 'Error: invalid user name or password'}.to_json
+    #end
+  #}
   
   coll = db.collection("register_clients")
   rep = EM::Synchrony.sync coll.find({:client_id => client_id}).defer_as_a

@@ -124,6 +124,9 @@ input[type="checkbox"]{
 	margin-bottom:0px;
 	padding-left:10px;
 	width:510px;
+	text-overflow:ellipsis;
+	overflow:hidden;
+	white-space:nowrap;
 }
 
 .li-jumbotron-path{
@@ -131,6 +134,20 @@ input[type="checkbox"]{
 	float:left;
 	height:80px;
 	line-height:80px;
+}
+
+.li-last-folder-path{
+	max-width:130px;
+	text-overflow:ellipsis;
+	overflow:hidden;
+	white-space:nowrap;
+}
+
+.li-current-folder-path{
+	max-width:130px;
+	text-overflow:ellipsis;
+	overflow:hidden;
+	white-space:nowrap;
 }
 
 .li-my-disk{
@@ -160,30 +177,28 @@ input[type="checkbox"]{
 .navbar-used-space-text{
 	color:white;
 	line-height:22px;
-	font-size:10px;
+	font-size:12px;
 	text-align:center;
 }
 
 .navbar-user-info{
-	width:240px;
 	height:40px;
 	overflow:hidden;
 	float:right;
-	margin-right:-120px;
 }
 
 .navbar-user-name{
-	float:left;
+	float:right;
 	color:white;
-	width:120px;
+	margin-left:40px;
 	line-height:40px;
 	text-align:center;
-	cursor:pointer;
 }
 
 .logout{
-	float:left;
+	float:right;
 	width:120px;
+	height:40px;
 }
 
 .btn-logout{
@@ -207,7 +222,7 @@ input[type="checkbox"]{
 	overflow-x:hidden;
 }
 
-.ul-file li{
+.ul-file>li{
 	height:60px;
 	line-height:60px;
 	width:940px;
@@ -233,7 +248,6 @@ input[type="checkbox"]{
 
 .div-file-icon{
 	float:left;
-	width:70px;
 	height:60px;
 }
 
@@ -245,24 +259,39 @@ input[type="checkbox"]{
 
 .div-file-name-action{
 	float:left;
-	width:580px;
+	width:540px;
 	padding-left:10px;
 }
 
 .div-file-name{
 	height:40px;
-	width:580px;
+	width:540px;
 	line-height:40px;
+	
 }
 
 .span-file-name{
 	cursor:pointer;
 	margin-left:0px;
+	overflow:hidden;
+	width:540px;
+	display:block;
+	text-overflow:ellipsis;
+	white-space:nowrap;
 }
 
 .div-file-action{
-	width:580px;
+	width:550px;
 	height:20px;
+}
+
+.div-file-shared{
+	float:left;
+	width:40px;
+	height:60px;
+	text-align:center;
+	color:green;
+	font-size:30px;
 }
 
 .div-file-size{
@@ -276,6 +305,7 @@ input[type="checkbox"]{
 	float:left;
 	width:150px;
 	text-align:center;
+	overflow:hidden;
 }
 
 .div-title-file-checkbox{
@@ -293,12 +323,18 @@ input[type="checkbox"]{
 
 .div-title-file-name-action{
 	float:left;
-	width:580px;
+	width:530px;
 	padding-left:10px;
 	font-weight:bold;
 	cursor:pointer;
 }
 
+.div-title-file-shared{
+	float:left;
+	width:40px;
+	height:40px;
+	font-weight:bold;
+}
 
 .div-title-file-size{
 	float:left;
@@ -343,12 +379,13 @@ input[type="checkbox"]{
 }
 
 .span-folder-tree-name{
-	display:inline-block;
+	display:block;
 	float:left;
 	cursor:pointer;
 	margin-left:0px;
 	color:rgb(51,51,51);
 	border-radius:4px;
+	white-space:nowrap;
 }
 
 .img-file-tree-icon{
@@ -410,6 +447,8 @@ input[type="checkbox"]{
 .back-btn{
 	font-family:'黑体';
 	font-weight:bold;
+	width:30px;
+	padding-left:10px;
 }
 
 .sort-arrow-down{
@@ -499,4 +538,49 @@ input[type="checkbox"]{
 
 .bg-red{
 	background-color:rgb(180,60,60);
+}
+
+.li-trash{
+	position: absolute;
+	top: 70px;
+	max-width:80px;
+}
+
+.trash-icon{
+	height: 30px;
+}
+
+.span-trash{
+	margin-left:-5px;
+}
+
+.img-open-share-folder{
+
+}
+
+.open-share-folder-btn{
+	height:30px;
+}
+
+.li-tenants{
+	height:30px;
+	line-height:30px;
+	cursor:pointer;
+	color:rgb(51,51,51);
+	padding-left:5px;
+	border-radius:4px;
+}
+
+.li-tenants:hover{
+	background-color: rgb(0, 129, 194);
+	background-image: linear-gradient(rgb(0, 136, 204), rgb(0, 119, 179));
+	color:white;
+}
+
+.btn-toolbar-cover{
+	width:158px;
+	height:40px;
+	position:absolute;
+	left:856px;
+	top:80px;
 }

@@ -51,7 +51,7 @@ post "/file/delete" do
   if params[:is_forever].nil? then
     is_forever = 0
   else
-    is_forever = 1
+    is_forever = params[:is_forever]
   end
   
   file_ids = params[:file_id]
@@ -121,12 +121,15 @@ end
 
 
 get "/file/download" do
+  p "download"
   if params[:file_id].nil? then
+    p "file_id is null"
     content_type :json
     status 400
     return {'restult' => -1, 'error_msg' => 'Missing required parameter: file_id'}.to_json
   end
 
+  p "aas"
   file_id = params[:file_id]
   begin
       file = Files.find(file_id.to_i)
@@ -135,15 +138,32 @@ get "/file/download" do
     status 400
     return {'result' => -1, 'error_msg' => "File doesn't exists"}.to_json
   end
+  
+  # 判断用户是否有权限下载
+  # if @username != file.username then
+  if "testuser" != file.username then
+    count = FileShare.where("username = ? and entity='share' and file_id=?", "testuser", file_id.to_s).count
+	if count == 0 then
+	  content_type :json
+      status 400
+      return {'result' => -1, 'error_msg' => "You can not download this file!"}.to_json
+	end
+  end
+  
   filerealpath = nil
   filerealpath = concat_file_path(file)
 
   mime_type = file.mime_type
-  content_type mime_type
+  begin
+    content_type mime_type
+  rescue RuntimeError => e
+    content_type :default
+  end
   #send_file filerealpath, :filename=>file.file_name
+  
   user_agent = request.user_agent.downcase
   filename = user_agent.include?("msie") ? CGI::escape(file.file_name) : file.file_name
-  response.headers['Content-Disposition'] = "attachment; filename=\"#{filename}\"" 
+  response.headers['Content-Disposition'] = "attachment; filename=\"#{filename}\""
   response.headers['X-Accel-Redirect'] = "/filesd" + filerealpath
 end
 
@@ -151,6 +171,7 @@ end
 post "/file/upload" do
   #username = session[:username]
   username = "testuser"
+  p "upload"
   if params[:current_folder_id].nil? then
     status 400
     content_type :json
@@ -159,7 +180,6 @@ post "/file/upload" do
   
   current_folder_id = params[:current_folder_id]
   current_folder = Folder.find(current_folder_id.to_i)
-  
   upload_file_name = String.new(params['attachment'][:filename])
   upload_file_name1 = String.new(params['attachment'][:filename])
   flag = 0
@@ -232,9 +252,20 @@ post "/file/upload" do
     return {'result' => -1, 'error_msg' => new_file.errors}.to_json
   end
   
-  status 200
-  "success"
+  upload_device = params[:upload_device]
+
+
+  if nil == upload_device then
+    status 200
+    return "success"
+  end
   
+  if "android" == upload_device then
+    content_type :json
+    status 200
+    return {'result' => 0, 'file_id' => new_file.file_id}.to_json 
+  end
+
 end
 
 def move_file(src_file_id, dest_folder_id)
@@ -407,6 +438,16 @@ def copy_file(file_ids, dest_folder_id)
   files.each do |file|
     dest_folder = Folder.find(dest_folder_id.to_i)
     copy_file = Files.find(file.to_i)
+	# 判断用户是否有权限下载
+    # if @username != file.username then
+    if "testuser" != copy_file.username then
+      count = FileShare.where("username = ? and entity='share' and file_id=?", "testuser", copy_file.file_id.to_s).count
+	  if count == 0 then
+	    content_type :json
+        status 400
+        return {'result' => -1, 'error_msg' => "You can not copy this file!"}.to_json
+	  end
+    end
     current_folder = copy_file.folders.first
     copy_file_name = String.new(copy_file.file_name)
     flag = 0
@@ -478,6 +519,11 @@ def delete_file(file_ids, is_forever)
       if !file.save then
         status 500
         return {'result' => -1, 'error_msg' => file.errors}.to_json
+      end
+	  # 删除file share
+	  array_file = FileShare.where("file_id=?", f.to_s)
+      array_file.each do |file|
+        file.destroy()
       end
     elsif is_forever.to_i == 1 then
       #file = Files.find(f.to_i)
