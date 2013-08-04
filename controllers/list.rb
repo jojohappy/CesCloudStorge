@@ -208,10 +208,69 @@ end
 get "/list/all_files" do
   username = "testuser"
   content_type :json
+  root_folder_id = get_user_root_folder
+  if -9999 == root_folder_id then
+    temp_folder = Folder.new
+    temp_folder.parent_folder_id = -1
+    temp_folder.folder_name = "我的云存储"
+    temp_folder.username = "testuser"
+    temp_folder.create_time = Time.new
+    temp_folder.last_modified = Time.new
+    temp_folder.description = "根目录"
+    temp_folder.save
+    root_folder_id = temp_folder.folder_id
+  end
+  if current_folder_id.to_i == -1 then
+    # 获得用户根目录
+    current_folder_id = root_folder_id
+  end
+  
+  trash_folder_id = get_user_trash_folder
+  if -9999 == trash_folder_id then
+    temp_folder = Folder.new
+    temp_folder.parent_folder_id = -10
+    temp_folder.folder_name = "回收站"
+    temp_folder.username = "testuser"
+    temp_folder.create_time = Time.new
+    temp_folder.last_modified = Time.new
+    temp_folder.description = "回收站"
+    temp_folder.save
+    trash_folder_id = temp_folder.folder_id
+  end
+  if current_folder_id.to_i == -10 then
+    # 获得用户回收站目录
+    current_folder_id = trash_folder_id
+  end
+  
+  share_folder_id = get_user_share_folder
+  if -9999 == share_folder_id then
+    temp_folder = Folder.new
+    temp_folder.parent_folder_id = -20
+    temp_folder.folder_name = "共享文件夹"
+    temp_folder.username = "testuser"
+    temp_folder.create_time = Time.new
+    temp_folder.last_modified = Time.new
+    temp_folder.description = "共享文件夹"
+    temp_folder.save
+    share_folder_id = temp_folder.folder_id
+  end
   file_list = []
   filelist = Files.where("username=?", username)
   folderlist = Folder.where("username=?", username).order(:folder_id)
   file_list = convertRecord2Struct4Mobile(folderlist, filelist)
+  
+  # 共享文件
+  filelistShare = []
+  file_share = FileShare.where("username=? and entity = 'share'", username).group('file_id')
+  file_share.each do |sharef|
+    filelistShare.push(sharef.file)
+  end
+  folderlistShare = []
+  file_result = convertRecord2Struct4Mobile(folderlistShare, filelistShare)
+  file_result.each do |file|
+	file.share = "Shared by " + file.username
+  end
+  file_list = file_list + file_result
   status 200
   {'result' => 0, 'file_list' => file_list}.to_json
 end
