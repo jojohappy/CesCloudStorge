@@ -220,10 +220,6 @@ get "/list/all_files" do
     temp_folder.save
     root_folder_id = temp_folder.folder_id
   end
-  if current_folder_id.to_i == -1 then
-    # 获得用户根目录
-    current_folder_id = root_folder_id
-  end
   
   trash_folder_id = get_user_trash_folder
   if -9999 == trash_folder_id then
@@ -236,10 +232,6 @@ get "/list/all_files" do
     temp_folder.description = "回收站"
     temp_folder.save
     trash_folder_id = temp_folder.folder_id
-  end
-  if current_folder_id.to_i == -10 then
-    # 获得用户回收站目录
-    current_folder_id = trash_folder_id
   end
   
   share_folder_id = get_user_share_folder
