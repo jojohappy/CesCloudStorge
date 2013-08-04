@@ -261,6 +261,7 @@ get "/list/all_files" do
   file_result = convertRecord2Struct4Mobile(folderlistShare, filelistShare)
   file_result.each do |file|
 	file.share = "Shared by " + file.username
+	file.origin_folder = -20
 	file.parent_folder_id = share_folder_id
   end
   file_list = file_list + file_result
